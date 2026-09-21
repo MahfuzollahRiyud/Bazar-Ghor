@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Bazar Ghor Admin',
                 'email' => 'admin@bazarghor.com',
                 'password' => Hash::make('admin123'),
+                'role' => 'admin',
                 'email_verified_at' => now(),
             ]
         );
