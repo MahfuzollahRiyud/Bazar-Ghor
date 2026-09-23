@@ -57,15 +57,48 @@ export default function StoreNavbar() {
     return (
         <>
             {/* Top Bar */}
-            <div className="bg-[#1f4e1b] py-1.5 sm:py-2 text-white text-xs border-b border-green-800/40">
+            <div className="bg-[#1f4e1b] py-1.5 sm:py-2 text-white text-xs border-b border-green-800/40 overflow-hidden">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-4">
                     {/* Delivery charge info - visible on desktop, hidden on mobile */}
                     <p className="hidden md:block font-medium tracking-wide">
                         {t.topBarDelivery}
                     </p>
 
-                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2 sm:gap-3.5 flex-nowrap overflow-x-auto no-scrollbar">
-                        {/* 1. Auth / Account Quick Link (First) */}
+                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2 sm:gap-3 flex-nowrap">
+                        {/* 1. Social Media Icons (First on the right group) */}
+                        {headerSocialLinks.length > 0 && (
+                            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+                                {headerSocialLinks.map((item) => (
+                                    <a
+                                        key={item.id}
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={item.title}
+                                        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-green-900/80 text-green-200 transition-colors hover:bg-white hover:text-[#1f4e1b]"
+                                    >
+                                        <SocialIcon platform={item.platform} icon={item.icon} size={11} />
+                                    </a>
+                                ))}
+                            </div>
+                        )}
+
+                        {headerSocialLinks.length > 0 && (
+                            <span className="text-green-500/70 text-xs shrink-0 select-none">|</span>
+                        )}
+
+                        {/* 2. Phone Number (Middle) */}
+                        <a
+                            href="tel:01613545166"
+                            className="flex items-center gap-1 sm:gap-1.5 font-medium transition-opacity hover:opacity-90 text-[11px] sm:text-xs shrink-0"
+                        >
+                            <Phone size={12} className="text-yellow-300 shrink-0" />
+                            <span className="whitespace-nowrap">01613-545166</span>
+                        </a>
+
+                        <span className="text-green-500/70 text-xs shrink-0 select-none">|</span>
+
+                        {/* 3. Auth / Account Quick Link (Rightmost) */}
                         <div className="flex items-center shrink-0">
                             {user ? (
                                 <Link
@@ -85,35 +118,6 @@ export default function StoreNavbar() {
                                 </Link>
                             )}
                         </div>
-
-                        <span className="text-green-500/70 text-xs shrink-0">|</span>
-
-                        {/* 2. Phone Number (Middle) */}
-                        <a
-                            href="tel:01613545166"
-                            className="flex items-center gap-1 sm:gap-1.5 font-medium transition-opacity hover:opacity-90 text-[11px] sm:text-xs shrink-0"
-                        >
-                            <Phone size={12} className="text-yellow-300 shrink-0" />
-                            <span className="whitespace-nowrap">01613-545166</span>
-                        </a>
-
-                        {/* 3. Social Media Icons (Rightmost, visible on desktop AND mobile) */}
-                        {headerSocialLinks.length > 0 && (
-                            <div className="flex items-center gap-1 sm:gap-1.5 pl-1.5 sm:pl-2 border-l border-green-700/60 shrink-0">
-                                {headerSocialLinks.map((item) => (
-                                    <a
-                                        key={item.id}
-                                        href={item.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title={item.title}
-                                        className="flex h-5 w-5 items-center justify-center rounded-full bg-green-900/70 text-green-200 transition-all hover:bg-white hover:text-[#1f4e1b] hover:scale-110"
-                                    >
-                                        <SocialIcon platform={item.platform} icon={item.icon} size={11} />
-                                    </a>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 </div>
             </div>
