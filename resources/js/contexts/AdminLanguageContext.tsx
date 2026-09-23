@@ -11,6 +11,7 @@ export interface AdminTranslations {
     orders: string;
     coupons: string;
     customers: string;
+    blogs: string;
     viewStore: string;
     logout: string;
 
@@ -192,6 +193,25 @@ export interface AdminTranslations {
     showInHeader: string;
     showInFooter: string;
     deleteSocialLinkConfirm: string;
+
+    // Blog Posts
+    blogManagement: string;
+    blogNotice: string;
+    addBlog: string;
+    editBlog: string;
+    blogTitle: string;
+    postContent: string;
+    postExcerpt: string;
+    featuredImage: string;
+    postAuthor: string;
+    publishStatus: string;
+    published: string;
+    draft: string;
+    views: string;
+    metaTitle: string;
+    metaDescription: string;
+    deleteBlogConfirm: string;
+    noBlogsFound: string;
 }
 
 const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
@@ -203,6 +223,7 @@ const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
         orders: 'Orders',
         coupons: 'Coupons',
         customers: 'Customers',
+        blogs: 'Blog Posts',
         viewStore: 'View Storefront',
         logout: 'Log Out',
 
@@ -375,6 +396,24 @@ const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
         showInHeader: 'Show in Header',
         showInFooter: 'Show in Footer',
         deleteSocialLinkConfirm: 'Are you sure you want to delete social link',
+
+        blogManagement: 'Blog Posts & Articles',
+        blogNotice: 'Publish engaging gadget reviews, buying guides, and technical tips to boost SEO rankings and drive organic store traffic.',
+        addBlog: 'Write New Blog Post',
+        editBlog: 'Edit Blog Post',
+        blogTitle: 'Blog Post Title',
+        postContent: 'Article Content',
+        postExcerpt: 'Short Summary / Excerpt',
+        featuredImage: 'Cover Image',
+        postAuthor: 'Author Name',
+        publishStatus: 'Publish Status',
+        published: 'Published',
+        draft: 'Draft',
+        views: 'Views',
+        metaTitle: 'SEO Meta Title',
+        metaDescription: 'SEO Meta Description',
+        deleteBlogConfirm: 'Are you sure you want to delete blog post',
+        noBlogsFound: 'No blog posts published yet.',
     },
     bn: {
         dashboard: 'ড্যাশবোর্ড',
@@ -384,6 +423,7 @@ const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
         orders: 'অর্ডার',
         coupons: 'কুপন',
         customers: 'কাস্টমার',
+        blogs: 'ব্লগ পোস্টসমূহ',
         viewStore: 'শপ দেখুন',
         logout: 'লগআউট',
 
@@ -556,6 +596,24 @@ const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
         showInHeader: 'হেডারে দেখান',
         showInFooter: 'ফুটারে দেখান',
         deleteSocialLinkConfirm: 'আপনি কি এই সোশ্যাল লিংকটি মুছে ফেলতে চান',
+
+        blogManagement: 'ব্লগ পোস্ট ও আর্টিকেল',
+        blogNotice: 'এসইও (SEO) র‍্যাঙ্কিং বৃদ্ধি এবং গ্রাহকদের বিশ্বস্ততা অর্জনের জন্য গ্যাজেটের রিভিউ, টিপস ও গাইড পোস্ট করুন।',
+        addBlog: 'নতুন ব্লগ পোস্ট লিখুন',
+        editBlog: 'ব্লগ পোস্ট সম্পাদনা',
+        blogTitle: 'ব্লগ পোস্টের শিরোনাম',
+        postContent: 'মূল আর্টিকেল / কন্টেন্ট',
+        postExcerpt: 'সংক্ষিপ্ত সারসংক্ষেপ (Excerpt)',
+        featuredImage: 'কভার ইমেজ',
+        postAuthor: 'লেখকের নাম',
+        publishStatus: 'পাবলিশ স্ট্যাটাস',
+        published: 'পাবলিশড',
+        draft: 'ড্রাফট',
+        views: 'ভিউস',
+        metaTitle: 'এসইও মেটা টাইটেল',
+        metaDescription: 'এসইও মেটা ডেসক্রিপশন',
+        deleteBlogConfirm: 'আপনি কি নিশ্চিত এই ব্লগ পোস্টটি মুছে ফেলতে চান',
+        noBlogsFound: 'এখনও কোনো ব্লগ পোস্ট যোগ করা হয়নি।',
     },
 };
 

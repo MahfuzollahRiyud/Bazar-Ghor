@@ -36,6 +36,7 @@ export default function StoreNavbar() {
     const navLinks = [
         { label: t.home, href: '/' },
         { label: t.shop, href: '/shop' },
+        { label: t.blog ?? (language === 'en' ? 'Blog' : 'ব্লগ'), href: '/blog' },
         { label: t.aboutUs, href: '/about' },
         { label: t.contactUs, href: '/contact' },
     ];
@@ -56,48 +57,49 @@ export default function StoreNavbar() {
     return (
         <>
             {/* Top Bar */}
-            <div className="bg-[#1f4e1b] py-2 text-white text-xs border-b border-green-800/40">
-                <div className="mx-auto flex max-w-7xl items-center justify-between px-4">
+            <div className="bg-[#1f4e1b] py-1.5 sm:py-2 text-white text-xs border-b border-green-800/40">
+                <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-4">
                     {/* Delivery charge info - visible on desktop, hidden on mobile */}
                     <p className="hidden md:block font-medium tracking-wide">
                         {t.topBarDelivery}
                     </p>
 
-                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 sm:gap-4">
-                        <a
-                            href="tel:01613545166"
-                            className="flex items-center gap-1.5 font-medium transition-opacity hover:opacity-90"
-                        >
-                            <Phone size={12} className="text-yellow-300" />
-                            <span>01613-545166</span>
-                        </a>
-
-                        <div className="flex items-center gap-3">
-                            <span className="text-green-400">|</span>
-
-                            {/* Auth / Account Quick Link */}
+                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2 sm:gap-3.5 flex-nowrap overflow-x-auto no-scrollbar">
+                        {/* 1. Auth / Account Quick Link (First) */}
+                        <div className="flex items-center shrink-0">
                             {user ? (
                                 <Link
                                     href={user.role === 'admin' ? '/dashboard' : '/account'}
-                                    className="flex items-center gap-1.5 font-semibold text-yellow-300 hover:text-white transition-colors"
+                                    className="flex items-center gap-1 sm:gap-1.5 font-semibold text-yellow-300 hover:text-white transition-colors text-[11px] sm:text-xs"
                                 >
-                                    <User size={13} />
+                                    <User size={13} className="shrink-0" />
                                     <span>{user.role === 'admin' ? t.dashboard : t.myAccount}</span>
                                 </Link>
                             ) : (
                                 <Link
                                     href="/login"
-                                    className="flex items-center gap-1.5 font-medium text-green-100 hover:text-white transition-colors"
+                                    className="flex items-center gap-1 sm:gap-1.5 font-medium text-green-100 hover:text-white transition-colors text-[11px] sm:text-xs"
                                 >
-                                    <LogIn size={13} />
+                                    <LogIn size={13} className="shrink-0" />
                                     <span>{t.loginOrRegister}</span>
                                 </Link>
                             )}
                         </div>
 
-                        {/* Desktop Social Media Icons */}
+                        <span className="text-green-500/70 text-xs shrink-0">|</span>
+
+                        {/* 2. Phone Number (Middle) */}
+                        <a
+                            href="tel:01613545166"
+                            className="flex items-center gap-1 sm:gap-1.5 font-medium transition-opacity hover:opacity-90 text-[11px] sm:text-xs shrink-0"
+                        >
+                            <Phone size={12} className="text-yellow-300 shrink-0" />
+                            <span className="whitespace-nowrap">01613-545166</span>
+                        </a>
+
+                        {/* 3. Social Media Icons (Rightmost, visible on desktop AND mobile) */}
                         {headerSocialLinks.length > 0 && (
-                            <div className="hidden md:flex items-center gap-1.5 pl-2 border-l border-green-700/60">
+                            <div className="flex items-center gap-1 sm:gap-1.5 pl-1.5 sm:pl-2 border-l border-green-700/60 shrink-0">
                                 {headerSocialLinks.map((item) => (
                                     <a
                                         key={item.id}
@@ -277,6 +279,26 @@ export default function StoreNavbar() {
                                     {user ? (user.role === 'admin' ? t.dashboard : t.myAccount) : t.loginOrRegister} →
                                 </Link>
                             </div>
+
+                            {headerSocialLinks.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-gray-100 flex items-center justify-between px-2">
+                                    <span className="text-xs text-gray-500">{language === 'en' ? 'Follow Us:' : 'অনুসরণ করুন:'}</span>
+                                    <div className="flex items-center gap-2">
+                                        {headerSocialLinks.map((item) => (
+                                            <a
+                                                key={item.id}
+                                                href={item.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                title={item.title}
+                                                className="flex h-6 w-6 items-center justify-center rounded-full bg-green-50 text-[#2d6a27] hover:bg-[#2d6a27] hover:text-white transition-colors"
+                                            >
+                                                <SocialIcon platform={item.platform} icon={item.icon} size={13} />
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

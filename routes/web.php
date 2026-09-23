@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
+Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
 Route::get('/cart', [PageController::class, 'cart'])->name('cart');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
@@ -104,6 +106,15 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::delete('/social-links/{socialLink}', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'destroy'])->name('social-links.destroy');
     Route::patch('/social-links/{socialLink}/toggle', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'toggle'])->name('social-links.toggle');
     Route::post('/social-links/reorder', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'reorder'])->name('social-links.reorder');
+
+    // Blog Posts (Articles, Reviews, Buying Guides)
+    Route::get('/blogs', [\App\Http\Controllers\Dashboard\BlogController::class, 'index'])->name('blogs.index');
+    Route::get('/blogs/create', [\App\Http\Controllers\Dashboard\BlogController::class, 'create'])->name('blogs.create');
+    Route::post('/blogs', [\App\Http\Controllers\Dashboard\BlogController::class, 'store'])->name('blogs.store');
+    Route::get('/blogs/{blog}/edit', [\App\Http\Controllers\Dashboard\BlogController::class, 'edit'])->name('blogs.edit');
+    Route::post('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'update'])->name('blogs.update');
+    Route::delete('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'destroy'])->name('blogs.destroy');
+    Route::patch('/blogs/{blog}/toggle', [\App\Http\Controllers\Dashboard\BlogController::class, 'toggle'])->name('blogs.toggle');
 });
 
 require __DIR__ . '/settings.php';

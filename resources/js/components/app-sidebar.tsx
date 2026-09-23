@@ -11,6 +11,7 @@ import {
     SlidersHorizontal,
     Code2,
     Share2,
+    Newspaper,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -81,6 +82,11 @@ export function AppSidebar() {
             title: t.socialLinks,
             href: '/dashboard/social-links',
             icon: Share2,
+        },
+        {
+            title: t.blogs,
+            href: '/dashboard/blogs',
+            icon: Newspaper,
         },
     ];
 

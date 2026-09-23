@@ -19,12 +19,22 @@ export interface Translations {
     setPassword: string;
     home: string;
     shop: string;
+    blog: string;
     aboutUs: string;
     contactUs: string;
     searchPlaceholder: string;
     search: string;
     cart: string;
     account: string;
+
+    // Blog
+    readMore: string;
+    publishedOn: string;
+    readTime: string;
+    latestPosts: string;
+    noPostsFound: string;
+    sharePost: string;
+    relatedArticles: string;
 
     // Actions & Buttons
     addToCart: string;
@@ -140,12 +150,21 @@ const TRANSLATIONS: Record<Language, Translations> = {
         setPassword: 'Set a Password',
         home: 'Home',
         shop: 'Shop',
+        blog: 'Blog',
         aboutUs: 'About Us',
         contactUs: 'Contact Us',
         searchPlaceholder: 'Search gadgets, airbuds...',
         search: 'Search',
         cart: 'Cart',
         account: 'Account',
+
+        readMore: 'Read More',
+        publishedOn: 'Published on',
+        readTime: 'min read',
+        latestPosts: 'Latest Articles & Tips',
+        noPostsFound: 'No blog posts found.',
+        sharePost: 'Share this article',
+        relatedArticles: 'Related Articles',
 
         addToCart: 'Add to Cart',
         addedToCart: 'Added!',
@@ -252,12 +271,21 @@ const TRANSLATIONS: Record<Language, Translations> = {
         setPassword: 'পাসওয়ার্ড নির্ধারণ করুন',
         home: 'হোম',
         shop: 'শপ',
+        blog: 'ব্লগ',
         aboutUs: 'আমাদের সম্পর্কে',
         contactUs: 'যোগাযোগ',
         searchPlaceholder: 'পণ্য খুঁজুন...',
         search: 'অনুসন্ধান',
         cart: 'কার্ট',
         account: 'অ্যাকাউন্ট',
+
+        readMore: 'আরও পড়ুন',
+        publishedOn: 'প্রকাশের তারিখ',
+        readTime: 'মিনিট পড়া',
+        latestPosts: 'সাম্প্রতিক ব্লগ ও গ্যাজেট টিপস',
+        noPostsFound: 'কোনো ব্লগ পোস্ট পাওয়া যায়নি।',
+        sharePost: 'শেয়ার করুন',
+        relatedArticles: 'সম্পর্কিত পোস্টসমূহ',
 
         addToCart: 'কার্টে যোগ করুন',
         addedToCart: 'যোগ হয়েছে!',

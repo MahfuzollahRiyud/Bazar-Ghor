@@ -25,6 +25,7 @@ export default function StoreFooter() {
     const quickLinks = [
         { label: t.home, href: '/' },
         { label: t.shop, href: '/shop' },
+        { label: t.blog ?? (language === 'en' ? 'Blog' : 'ব্লগ'), href: '/blog' },
         { label: t.aboutUs, href: '/about' },
         { label: t.contactUs, href: '/contact' },
         { label: t.myAccount, href: '/account' },
