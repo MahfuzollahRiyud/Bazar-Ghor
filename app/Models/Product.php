@@ -58,6 +58,26 @@ class Product extends Model
         return asset('storage/' . $this->thumbnail);
     }
 
+    public function getGalleryUrlsAttribute(): array
+    {
+        $urls = [];
+        if ($this->thumbnail_url) {
+            $urls[] = $this->thumbnail_url;
+        }
+
+        if (is_array($this->images)) {
+            foreach ($this->images as $img) {
+                if (!$img) continue;
+                $url = str_starts_with($img, 'http') ? $img : asset('storage/' . $img);
+                if (!in_array($url, $urls)) {
+                    $urls[] = $url;
+                }
+            }
+        }
+
+        return $urls;
+    }
+
     public function getEffectivePriceAttribute(): string
     {
         return $this->sale_price ?? $this->price;

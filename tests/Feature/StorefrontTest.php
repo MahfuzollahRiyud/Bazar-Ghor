@@ -20,8 +20,28 @@ class StorefrontTest extends TestCase
 
     public function test_shop_page_loads_successfully()
     {
+        $category = Category::create(['name' => 'Fashion', 'slug' => 'fashion']);
+        Product::create([
+            'category_id' => $category->id,
+            'name' => 'Classic Polo',
+            'slug' => 'classic-polo',
+            'price' => 1200,
+            'thumbnail' => 'products/polo.jpg',
+            'images' => ['products/polo-side.jpg', 'products/polo-back.jpg'],
+            'video_url' => 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            'is_active' => true,
+            'stock_quantity' => 5,
+        ]);
+
         $response = $this->get('/shop');
         $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->component('shop')
+            ->has('products.data', 1)
+            ->where('products.data.0.name', 'Classic Polo')
+            ->where('products.data.0.video_url', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ')
+            ->has('products.data.0.gallery_urls', 3)
+        );
     }
 
     public function test_product_detail_page_loads_successfully()
@@ -50,6 +70,9 @@ class StorefrontTest extends TestCase
         $this->get('/cart')->assertOk();
         $this->get('/about')->assertOk();
         $this->get('/contact')->assertOk();
+        $this->get('/privacy-policy')->assertOk();
+        $this->get('/return-policy')->assertOk();
+        $this->get('/terms')->assertOk();
         $this->get('/checkout')->assertOk();
     }
 

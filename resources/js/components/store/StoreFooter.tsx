@@ -1,9 +1,26 @@
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Link } from '@inertiajs/react';
-import { Facebook, Lock, MapPin, Phone } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { ExternalLink, Facebook, Lock, MapPin, Phone } from 'lucide-react';
+import SocialIcon from '@/components/store/SocialIcon';
+
+interface SocialLinkItem {
+    id: number;
+    platform: string;
+    title: string;
+    url: string;
+    icon?: string;
+    color?: string;
+    is_active: boolean;
+    show_in_header: boolean;
+    show_in_footer: boolean;
+    sort_order: number;
+}
 
 export default function StoreFooter() {
     const { t, language } = useLanguage();
+    const { props } = usePage<{ socialLinks?: SocialLinkItem[] }>();
+    const socialLinks = Array.isArray(props.socialLinks) ? props.socialLinks : [];
+    const footerSocialLinks = socialLinks.filter((s) => s && s.is_active && s.show_in_footer);
 
     const quickLinks = [
         { label: t.home, href: '/' },
@@ -11,6 +28,12 @@ export default function StoreFooter() {
         { label: t.aboutUs, href: '/about' },
         { label: t.contactUs, href: '/contact' },
         { label: t.myAccount, href: '/account' },
+    ];
+
+    const policyLinks = [
+        { label: t.privacyPolicy, href: '/privacy-policy' },
+        { label: t.returnPolicy, href: '/return-policy' },
+        { label: t.termsConditions, href: '/terms' },
     ];
 
     const categories = [
@@ -40,17 +63,33 @@ export default function StoreFooter() {
                         <p className="mb-4 text-sm leading-relaxed text-green-200">
                             {t.footerBrandDesc}
                         </p>
-                        <div className="flex gap-3">
-                            <a
-                                href="https://www.facebook.com/onlinebazarghor"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2d6a27] text-white transition-colors hover:bg-[#3d8f33]"
-                                aria-label="Facebook Page"
-                                title="Facebook Page"
-                            >
-                                <Facebook size={18} />
-                            </a>
+                        <div className="flex flex-wrap items-center gap-2.5">
+                            {footerSocialLinks.length > 0 ? (
+                                footerSocialLinks.map((item) => (
+                                    <a
+                                        key={item.id}
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2d6a27] text-white transition-all hover:bg-[#3d8f33] hover:scale-110 shadow-xs"
+                                        aria-label={item.title}
+                                        title={item.title}
+                                    >
+                                        <SocialIcon platform={item.platform} icon={item.icon} size={17} />
+                                    </a>
+                                ))
+                            ) : (
+                                <a
+                                    href="https://www.facebook.com/onlinebazarghor"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex h-9 w-9 items-center justify-center rounded-full bg-[#2d6a27] text-white transition-colors hover:bg-[#3d8f33]"
+                                    aria-label="Facebook Page"
+                                    title="Facebook Page (Bazar Ghor)"
+                                >
+                                    <SocialIcon platform="facebook" size={17} />
+                                </a>
+                            )}
                             <Link
                                 href="/login"
                                 className="flex h-9 w-9 items-center justify-center rounded-full bg-green-900/60 text-green-200 transition-colors hover:bg-green-800 hover:text-white"
@@ -62,11 +101,21 @@ export default function StoreFooter() {
                         </div>
                     </div>
 
-                    {/* Quick Links */}
+                    {/* Quick Links & Policies */}
                     <div>
                         <h3 className="mb-4 text-base font-semibold text-green-300 uppercase tracking-wider">{t.quickLinks}</h3>
                         <ul className="space-y-2">
                             {quickLinks.map((link) => (
+                                <li key={link.href}>
+                                    <Link
+                                        href={link.href}
+                                        className="text-sm text-green-200 transition-colors hover:text-white hover:translate-x-1 inline-block"
+                                    >
+                                        → {link.label}
+                                    </Link>
+                                </li>
+                            ))}
+                            {policyLinks.map((link) => (
                                 <li key={link.href}>
                                     <Link
                                         href={link.href}
@@ -128,14 +177,15 @@ export default function StoreFooter() {
                             <div className="flex items-start gap-2">
                                 <Facebook size={16} className="mt-0.5 shrink-0 text-green-400" />
                                 <div>
-                                    <p className="text-xs text-green-300">Facebook Page</p>
+                                    <p className="text-xs text-green-300">{t.facebookPage}</p>
                                     <a
                                         href="https://www.facebook.com/onlinebazarghor"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm font-medium text-white hover:text-green-300"
+                                        className="text-sm font-semibold text-white hover:text-emerald-300 inline-flex items-center gap-1.5 transition-colors"
                                     >
-                                        facebook.com/onlinebazarghor
+                                        <span>Bazar Ghor</span>
+                                        <ExternalLink size={12} className="opacity-75" />
                                     </a>
                                 </div>
                             </div>
@@ -160,16 +210,24 @@ export default function StoreFooter() {
 
             {/* Bottom Bar */}
             <div className="border-t border-green-900/80 py-4">
-                <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+                <div className="mx-auto max-w-7xl px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
                     <p className="text-xs text-green-400">
                         © {new Date().getFullYear()} Bazar Ghor. {t.allRightsReserved}
                     </p>
-                    <div className="flex items-center gap-4 text-xs text-green-300">
-                        <Link href="/login" className="hover:text-white flex items-center gap-1">
-                            <Lock size={11} /> {t.loginOrRegister}
+                    <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs text-green-300">
+                        <Link href="/privacy-policy" className="hover:text-white transition-colors">
+                            {t.privacyPolicy}
                         </Link>
                         <span>•</span>
-                        <Link href="/account" className="hover:text-white">
+                        <Link href="/return-policy" className="hover:text-white transition-colors">
+                            {t.returnPolicy}
+                        </Link>
+                        <span>•</span>
+                        <Link href="/terms" className="hover:text-white transition-colors">
+                            {t.termsConditions}
+                        </Link>
+                        <span>•</span>
+                        <Link href="/account" className="hover:text-white transition-colors">
                             {t.myAccount}
                         </Link>
                     </div>

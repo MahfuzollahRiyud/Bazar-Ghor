@@ -1,3 +1,4 @@
+import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
 import {
     ArrowUpDown,
@@ -76,6 +77,7 @@ export default function ProductsIndex({
     filters = {},
     stats,
 }: Props) {
+    const { t, language } = useAdminLanguage();
     const [deleting, setDeleting] = useState<number | null>(null);
 
     const safeFilters: Filters = (filters && typeof filters === 'object' && !Array.isArray(filters)) ? filters : {};
@@ -119,11 +121,11 @@ export default function ProductsIndex({
     };
 
     const handleDelete = (id: number, name: string) => {
-        if (!confirm(`"${name}" মুছে ফেলতে চান? এটি পুনরুদ্ধার করা যাবে না।`)) return;
+        if (!confirm(t.deleteProductConfirm)) return;
         setDeleting(id);
         router.delete(`/dashboard/products/${id}`, {
-            onSuccess: () => toast.success('পণ্যটি সফলভাবে মুছে ফেলা হয়েছে।'),
-            onError: () => toast.error('পণ্যটি মুছতে সমস্যা হয়েছে।'),
+            onSuccess: () => toast.success(language === 'en' ? 'Product deleted successfully.' : 'পণ্যটি সফলভাবে মুছে ফেলা হয়েছে।'),
+            onError: () => toast.error(language === 'en' ? 'Failed to delete product.' : 'পণ্যটি মুছতে সমস্যা হয়েছে।'),
             onFinish: () => setDeleting(null),
         });
     };
@@ -132,20 +134,22 @@ export default function ProductsIndex({
 
     return (
         <>
-            <Head title="পণ্য ব্যবস্থাপনা — Bazar Ghor Admin" />
+            <Head title={`${t.productManagement} — Bazar Ghor Admin`} />
 
             <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold text-gray-900">পণ্য ব্যবস্থাপনা</h1>
+                            <h1 className="text-2xl font-bold text-gray-900">{t.productManagement}</h1>
                             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">
-                                WooCommerce স্টাইল
+                                {language === 'en' ? 'Catalog' : 'ক্যাটালগ'}
                             </span>
                         </div>
                         <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
-                            মোট {totalCount}টি পণ্য পাওয়া গেছে
+                            {language === 'en'
+                                ? `Found ${totalCount} total products`
+                                : `মোট ${totalCount}টি পণ্য পাওয়া গেছে`}
                         </p>
                     </div>
 
@@ -154,11 +158,11 @@ export default function ProductsIndex({
                         className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#2d6a27] px-5 py-2.5 font-bold text-sm text-white shadow-sm transition hover:bg-[#23531f] active:scale-95"
                     >
                         <PackagePlus size={18} />
-                        নতুন পণ্য যোগ করুন
+                        {t.addProduct}
                     </Link>
                 </div>
 
-                {/* WooCommerce-style Quick Status Tabs */}
+                {/* Status Tabs */}
                 <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 text-xs sm:text-sm font-medium">
                     <button
                         onClick={() => { setStockStatus(''); applyFilters({ stock_status: '' }); }}
@@ -168,7 +172,7 @@ export default function ProductsIndex({
                                 : 'text-gray-600 hover:bg-gray-100'
                         }`}
                     >
-                        সব পণ্য <span className="opacity-80">({totalCount})</span>
+                        {t.allProducts} <span className="opacity-80">({totalCount})</span>
                     </button>
 
                     <button
@@ -180,7 +184,7 @@ export default function ProductsIndex({
                         }`}
                     >
                         <CheckCircle2 size={14} />
-                        স্টকে আছে <span className="opacity-80">({inStockCount})</span>
+                        {t.inStock} <span className="opacity-80">({inStockCount})</span>
                     </button>
 
                     <button
@@ -192,7 +196,7 @@ export default function ProductsIndex({
                         }`}
                     >
                         <XCircle size={14} />
-                        স্টক শেষ <span className="opacity-80">({outOfStockCount})</span>
+                        {t.outOfStock} <span className="opacity-80">({outOfStockCount})</span>
                     </button>
                 </div>
 
@@ -206,7 +210,7 @@ export default function ProductsIndex({
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
-                                placeholder="নাম অথবা SKU দিয়ে খুঁজুন..."
+                                placeholder={language === 'en' ? 'Search by name or SKU...' : 'নাম অথবা SKU দিয়ে খুঁজুন...'}
                                 className="w-full rounded-xl border border-gray-300 bg-white py-2 pl-9 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none"
                             />
                         </div>
@@ -221,14 +225,14 @@ export default function ProductsIndex({
                                 }}
                                 className="w-full rounded-xl border border-gray-300 bg-white py-2 px-3 text-xs text-gray-900 focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none"
                             >
-                                <option value="">সব ক্যাটাগরি</option>
+                                <option value="">{language === 'en' ? 'All Categories' : 'সব ক্যাটাগরি'}</option>
                                 {safeCategories.map((c) => (
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* Sorting Dropdown (A to Z, Z to A, etc.) */}
+                        {/* Sorting Dropdown */}
                         <div>
                             <select
                                 value={sort}
@@ -238,13 +242,13 @@ export default function ProductsIndex({
                                 }}
                                 className="w-full rounded-xl border border-gray-300 bg-white py-2 px-3 text-xs text-gray-900 focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none font-medium"
                             >
-                                <option value="">সর্টিং: নতুন আগে</option>
-                                <option value="name_asc">নাম: A to Z</option>
-                                <option value="name_desc">নাম: Z to A</option>
-                                <option value="price_asc">দাম: কম থেকে বেশি</option>
-                                <option value="price_desc">দাম: বেশি থেকে কম</option>
-                                <option value="stock_desc">স্টক: বেশি থেকে কম</option>
-                                <option value="oldest">পুরাতন আগে</option>
+                                <option value="">{language === 'en' ? 'Sort: Newest First' : 'সর্টিং: নতুন আগে'}</option>
+                                <option value="name_asc">{language === 'en' ? 'Name: A to Z' : 'নাম: A to Z'}</option>
+                                <option value="name_desc">{language === 'en' ? 'Name: Z to A' : 'নাম: Z to A'}</option>
+                                <option value="price_asc">{language === 'en' ? 'Price: Low to High' : 'দাম: কম থেকে বেশি'}</option>
+                                <option value="price_desc">{language === 'en' ? 'Price: High to Low' : 'দাম: বেশি থেকে কম'}</option>
+                                <option value="stock_desc">{language === 'en' ? 'Stock: High to Low' : 'স্টক: বেশি থেকে কম'}</option>
+                                <option value="oldest">{language === 'en' ? 'Oldest First' : 'পুরাতন আগে'}</option>
                             </select>
                         </div>
 
@@ -255,7 +259,7 @@ export default function ProductsIndex({
                                 className="flex-1 rounded-xl bg-[#2d6a27] py-2 px-3 text-xs font-bold text-white hover:bg-[#23531f] transition shadow-xs flex items-center justify-center gap-1"
                             >
                                 <Filter size={13} />
-                                ফিল্টার
+                                {t.filter}
                             </button>
 
                             {hasActiveFilters && (
@@ -263,7 +267,7 @@ export default function ProductsIndex({
                                     type="button"
                                     onClick={resetFilters}
                                     className="rounded-xl border border-gray-300 bg-gray-50 py-2 px-3 text-xs font-semibold text-gray-600 hover:bg-gray-100 transition"
-                                    title="ফিল্টার রিসেট করুন"
+                                    title={language === 'en' ? 'Reset Filters' : 'ফিল্টার রিসেট করুন'}
                                 >
                                     <RotateCcw size={13} />
                                 </button>
@@ -278,13 +282,13 @@ export default function ProductsIndex({
                         <table className="w-full text-left text-sm border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                                    <th className="px-4 py-3.5 w-16">ছবি</th>
-                                    <th className="px-4 py-3.5">পণ্য ও বিবরণ</th>
-                                    <th className="px-4 py-3.5 hidden md:table-cell">ক্যাটাগরি</th>
-                                    <th className="px-4 py-3.5">মূল্য</th>
-                                    <th className="px-4 py-3.5">স্টক</th>
-                                    <th className="px-4 py-3.5 hidden sm:table-cell">স্ট্যাটাস</th>
-                                    <th className="px-4 py-3.5 text-right w-28">অ্যাকশন</th>
+                                    <th className="px-4 py-3.5 w-16">{language === 'en' ? 'Image' : 'ছবি'}</th>
+                                    <th className="px-4 py-3.5">{language === 'en' ? 'Product & SKU' : 'পণ্য ও বিবরণ'}</th>
+                                    <th className="px-4 py-3.5 hidden md:table-cell">{t.category}</th>
+                                    <th className="px-4 py-3.5">{t.price}</th>
+                                    <th className="px-4 py-3.5">{t.stock}</th>
+                                    <th className="px-4 py-3.5 hidden sm:table-cell">{t.status}</th>
+                                    <th className="px-4 py-3.5 text-right w-28">{t.actions}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -325,7 +329,7 @@ export default function ProductsIndex({
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 className="text-gray-400 hover:text-[#2d6a27] transition"
-                                                                title="ওয়েবসাইটে দেখুন"
+                                                                title={language === 'en' ? 'View in Store' : 'ওয়েবসাইটে দেখুন'}
                                                             >
                                                                 <ExternalLink size={12} />
                                                             </a>
@@ -335,12 +339,12 @@ export default function ProductsIndex({
                                                             <span>SKU: {product.sku || 'N/A'}</span>
                                                             {product.has_variants && (
                                                                 <span className="rounded-md bg-purple-50 px-1.5 py-0.2 text-[10px] font-semibold text-purple-700 border border-purple-200">
-                                                                    ভ্যারিয়েন্ট আছে
+                                                                    {language === 'en' ? 'Variants' : 'ভ্যারিয়েন্ট আছে'}
                                                                 </span>
                                                             )}
                                                             {product.is_featured && (
                                                                 <span className="flex items-center gap-0.5 text-amber-600 font-semibold text-[10px]">
-                                                                    <Star size={10} className="fill-current" /> Featured
+                                                                    <Star size={10} className="fill-current" /> {t.featured}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -364,17 +368,19 @@ export default function ProductsIndex({
                                                     )}
                                                 </td>
 
-                                                {/* Stock Status (WooCommerce badge style) */}
+                                                {/* Stock Status */}
                                                 <td className="px-4 py-3">
                                                     {isInStock ? (
                                                         <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
                                                             <span className="size-1.5 rounded-full bg-emerald-500" />
-                                                            {product.has_variants ? 'ইন স্টক' : `স্টক: ${product.stock_quantity}`}
+                                                            {product.has_variants
+                                                                ? t.inStock
+                                                                : `${language === 'en' ? 'Stock' : 'স্টক'}: ${product.stock_quantity}`}
                                                         </span>
                                                     ) : (
                                                         <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 border border-red-200">
                                                             <span className="size-1.5 rounded-full bg-red-500" />
-                                                            স্টক নেই
+                                                            {t.outOfStock}
                                                         </span>
                                                     )}
                                                 </td>
@@ -386,7 +392,7 @@ export default function ProductsIndex({
                                                             ? 'bg-blue-50 text-blue-700 border border-blue-200'
                                                             : 'bg-gray-100 text-gray-500 border border-gray-200'
                                                     }`}>
-                                                        {product.is_active ? 'অনলাইন' : 'ড্রাফট'}
+                                                        {product.is_active ? t.active : t.inactive}
                                                     </span>
                                                 </td>
 
@@ -396,7 +402,7 @@ export default function ProductsIndex({
                                                         <Link
                                                             href={`/dashboard/products/${product.id}/edit`}
                                                             className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-700 hover:border-[#2d6a27] hover:text-[#2d6a27] transition shadow-2xs"
-                                                            title="সম্পাদনা করুন"
+                                                            title={t.edit}
                                                         >
                                                             <Edit size={14} />
                                                         </Link>
@@ -404,7 +410,7 @@ export default function ProductsIndex({
                                                             onClick={() => handleDelete(product.id, product.name)}
                                                             disabled={deleting === product.id}
                                                             className="rounded-lg border border-gray-200 bg-white p-1.5 text-red-600 hover:border-red-500 hover:bg-red-50 transition shadow-2xs disabled:opacity-50"
-                                                            title="মুছে ফেলুন"
+                                                            title={t.delete}
                                                         >
                                                             <Trash2 size={14} />
                                                         </button>
@@ -417,8 +423,14 @@ export default function ProductsIndex({
                                     <tr>
                                         <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
                                             <Package size={40} className="mx-auto text-gray-300 mb-2" />
-                                            <p className="font-semibold text-gray-700">কোনো পণ্য পাওয়া যায়নি</p>
-                                            <p className="text-xs text-gray-400 mt-1">ফিল্টার রিসেট করুন বা নতুন পণ্য যোগ করুন</p>
+                                            <p className="font-semibold text-gray-700">
+                                                {language === 'en' ? 'No products found' : 'কোনো পণ্য পাওয়া যায়নি'}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                {language === 'en'
+                                                    ? 'Try resetting your search filters or add a new product.'
+                                                    : 'ফিল্টার রিসেট করুন বা নতুন পণ্য যোগ করুন'}
+                                            </p>
                                         </td>
                                     </tr>
                                 )}
@@ -430,7 +442,9 @@ export default function ProductsIndex({
                     {products?.last_page && products.last_page > 1 && paginationLinks.length > 0 && (
                         <div className="border-t border-gray-200 px-4 py-3.5 flex items-center justify-between flex-wrap gap-2 bg-gray-50/50">
                             <span className="text-xs text-gray-500">
-                                পেজ {products.current_page} এর {products.last_page} (মোট {totalCount}টি পণ্য)
+                                {language === 'en'
+                                    ? `Page ${products.current_page} of ${products.last_page} (${totalCount} total products)`
+                                    : `পেজ ${products.current_page} এর ${products.last_page} (মোট ${totalCount}টি পণ্য)`}
                             </span>
 
                             <div className="flex items-center gap-1.5">

@@ -72,6 +72,126 @@ export interface AdminTranslations {
     categoryAddedSuccess: string;
     categoryUpdatedSuccess: string;
     categoryDeletedSuccess: string;
+
+    // Hero Section
+    heroSection: string;
+    heroManagement: string;
+    displayMode: string;
+    singleBanner: string;
+    sliderCarousel: string;
+    useSlider: string;
+    heroNotice: string;
+    addSlide: string;
+    editSlide: string;
+    slideTitle: string;
+    slideSubtitle: string;
+    slideLink: string;
+    moveUp: string;
+    moveDown: string;
+    order: string;
+    reorderSuccess: string;
+    noSlidesFound: string;
+    originalQualityNotice: string;
+
+    // Orders Management
+    ordersManagement: string;
+    allOrders: string;
+    pending: string;
+    confirmed: string;
+    processingOrders: string;
+    shipped: string;
+    delivered: string;
+    cancelled: string;
+    customer: string;
+    orderDetails: string;
+    updateStatus: string;
+    changeStatus: string;
+    customerInfo: string;
+    deliveryInfo: string;
+    orderItems: string;
+    subtotal: string;
+    deliveryCharge: string;
+    discount: string;
+    items: string;
+    quantity: string;
+    orderNumber: string;
+    paymentMethod: string;
+    division: string;
+    district: string;
+    upazila: string;
+    deliveryArea: string;
+    notes: string;
+
+    // Products Management
+    productManagement: string;
+    addProduct: string;
+    editProduct: string;
+    allProducts: string;
+    inStock: string;
+    outOfStock: string;
+    stock: string;
+    stockQuantity: string;
+    category: string;
+    featured: string;
+    sku: string;
+    salePrice: string;
+    regularPrice: string;
+    thumbnail: string;
+    gallery: string;
+    deleteProductConfirm: string;
+
+    // Coupons
+    couponManagement: string;
+    newCoupon: string;
+    editCoupon: string;
+    couponCode: string;
+    discountType: string;
+    percentage: string;
+    fixedAmount: string;
+    discountValue: string;
+    minOrderAmount: string;
+    maxDiscountAmount: string;
+    usageLimit: string;
+    expiryDate: string;
+    timesUsed: string;
+    valid: string;
+    expired: string;
+    activateCoupon: string;
+    noCouponsFound: string;
+    deleteCouponConfirm: string;
+
+    // Code Snippets
+    codeSnippets: string;
+    snippetsManagement: string;
+    snippetsNotice: string;
+    addSnippet: string;
+    editSnippet: string;
+    snippetTitle: string;
+    placement: string;
+    headerLocation: string;
+    bodyLocation: string;
+    footerLocation: string;
+    codeContent: string;
+    snippetActive: string;
+    noSnippetsFound: string;
+    deleteSnippetConfirm: string;
+    snippetPlaceholder: string;
+    headerCount: string;
+    bodyCount: string;
+    footerCount: string;
+
+    // Social Media Links
+    socialLinks: string;
+    socialMediaManagement: string;
+    socialMediaNotice: string;
+    addSocialLink: string;
+    editSocialLink: string;
+    platform: string;
+    linkTitle: string;
+    targetUrl: string;
+    showInHeader: string;
+    showInFooter: string;
+    deleteSocialLinkConfirm: string;
 }
 
 const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
@@ -141,6 +261,120 @@ const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
         categoryAddedSuccess: 'Category created successfully!',
         categoryUpdatedSuccess: 'Category updated successfully!',
         categoryDeletedSuccess: 'Category deleted successfully!',
+
+        heroSection: 'Hero Section',
+        heroManagement: 'Hero Banner & Slider Management',
+        displayMode: 'Display Mode',
+        singleBanner: 'Single Static Banner',
+        sliderCarousel: 'Multi-Slide Carousel Slider',
+        useSlider: 'Use Slider',
+        heroNotice: 'Control what visitors see on the homepage hero section. You can switch between a single high-impact banner or an interactive auto-sliding carousel.',
+        addSlide: 'Add New Slide',
+        editSlide: 'Edit Slide',
+        slideTitle: 'Title / Caption (Optional)',
+        slideSubtitle: 'Subtitle (Optional)',
+        slideLink: 'Link / Action URL (e.g. /shop or /shop?category=airbuds)',
+        moveUp: 'Move Up',
+        moveDown: 'Move Down',
+        order: 'Order',
+        reorderSuccess: 'Slide sequence updated successfully!',
+        noSlidesFound: 'No hero slides added yet.',
+        originalQualityNotice: '100% Original HD Quality: Banner images are preserved without lossy compression or blur.',
+
+        ordersManagement: 'Order Management',
+        allOrders: 'All Orders',
+        pending: 'Pending',
+        confirmed: 'Confirmed',
+        processingOrders: 'Processing',
+        shipped: 'Shipped',
+        delivered: 'Delivered',
+        cancelled: 'Cancelled',
+        customer: 'Customer',
+        orderDetails: 'Order Details',
+        updateStatus: 'Update Order Status',
+        changeStatus: 'Change Status',
+        customerInfo: 'Customer Information',
+        deliveryInfo: 'Delivery Information',
+        orderItems: 'Order Items',
+        subtotal: 'Subtotal',
+        deliveryCharge: 'Delivery Charge',
+        discount: 'Discount',
+        items: 'Items',
+        quantity: 'Quantity',
+        orderNumber: 'Order Number',
+        paymentMethod: 'Payment Method',
+        division: 'Division',
+        district: 'District',
+        upazila: 'Upazila / Thana',
+        deliveryArea: 'Delivery Area',
+        notes: 'Order Notes',
+
+        productManagement: 'Product Management',
+        addProduct: 'Add New Product',
+        editProduct: 'Edit Product',
+        allProducts: 'All Products',
+        inStock: 'In Stock',
+        outOfStock: 'Out of Stock',
+        stock: 'Stock',
+        stockQuantity: 'Stock Quantity',
+        category: 'Category',
+        featured: 'Featured',
+        sku: 'SKU',
+        salePrice: 'Sale Price',
+        regularPrice: 'Regular Price',
+        thumbnail: 'Thumbnail Image',
+        gallery: 'Gallery Images',
+        deleteProductConfirm: 'Are you sure you want to delete this product? This action cannot be undone.',
+
+        couponManagement: 'Coupon Management',
+        newCoupon: 'New Coupon',
+        editCoupon: 'Edit Coupon',
+        couponCode: 'Coupon Code',
+        discountType: 'Discount Type',
+        percentage: 'Percentage (%)',
+        fixedAmount: 'Fixed Amount (৳)',
+        discountValue: 'Discount Amount',
+        minOrderAmount: 'Minimum Order (৳)',
+        maxDiscountAmount: 'Maximum Discount (৳)',
+        usageLimit: 'Usage Limit',
+        expiryDate: 'Expiry Date',
+        timesUsed: 'Times Used',
+        valid: 'Active',
+        expired: 'Expired',
+        activateCoupon: 'Activate Coupon',
+        noCouponsFound: 'No coupons found.',
+        deleteCouponConfirm: 'Are you sure you want to delete coupon',
+
+        codeSnippets: 'Code Snippets',
+        snippetsManagement: 'Code Snippets & Tracking Scripts',
+        snippetsNotice: 'Easily inject custom tracking tags, Facebook Pixel, Google Tag Manager (GTM), or analytics codes into your storefront header, body, or footer without editing theme files.',
+        addSnippet: 'Add New Snippet',
+        editSnippet: 'Edit Snippet',
+        snippetTitle: 'Snippet Title / Description',
+        placement: 'Placement Location',
+        headerLocation: 'Header (<head>)',
+        bodyLocation: 'Body (After <body>)',
+        footerLocation: 'Footer (Before </body>)',
+        codeContent: 'Code / Script Content',
+        snippetActive: 'Enable snippet on storefront',
+        noSnippetsFound: 'No code snippets added yet.',
+        deleteSnippetConfirm: 'Are you sure you want to delete this code snippet?',
+        snippetPlaceholder: '<script>\n  // Paste Facebook Pixel, GTM, or custom scripts here...\n</script>',
+        headerCount: 'Header Snippets',
+        bodyCount: 'Body Snippets',
+        footerCount: 'Footer Snippets',
+
+        socialLinks: 'Social Links',
+        socialMediaManagement: 'Social Media Links & Accounts',
+        socialMediaNotice: 'Manage your official social media profiles. Active links will dynamically appear on your store header top bar and footer with official brand icons.',
+        addSocialLink: 'Add Social Link',
+        editSocialLink: 'Edit Social Link',
+        platform: 'Platform',
+        linkTitle: 'Profile Title / Label',
+        targetUrl: 'Target URL / Link',
+        showInHeader: 'Show in Header',
+        showInFooter: 'Show in Footer',
+        deleteSocialLinkConfirm: 'Are you sure you want to delete social link',
     },
     bn: {
         dashboard: 'ড্যাশবোর্ড',
@@ -208,6 +442,120 @@ const TRANSLATIONS: Record<AdminLanguage, AdminTranslations> = {
         categoryAddedSuccess: 'ক্যাটাগরি সফলভাবে তৈরি হয়েছে!',
         categoryUpdatedSuccess: 'ক্যাটাগরি সফলভাবে আপডেট করা হয়েছে!',
         categoryDeletedSuccess: 'ক্যাটাগরি মুছে ফেলা হয়েছে!',
+
+        heroSection: 'হিরো সেকশন',
+        heroManagement: 'হিরো ব্যানার ও স্লাইডার ব্যবস্থাপনা',
+        displayMode: 'ডিসপ্লে মোড',
+        singleBanner: 'সিঙ্গেল স্ট্যাটিক ব্যানার',
+        sliderCarousel: 'মাল্টি-স্লাইড ক্যারোসেল স্লাইডার',
+        useSlider: 'স্লাইডার ব্যবহার করুন',
+        heroNotice: 'ওয়েবসাইটের মূল হিরো সেকশন নিয়ন্ত্রণ করুন। আপনি চাইলে একটি সিঙ্গেল ব্যানার অথবা একের অধিক ব্যানার নিয়ে অটো-স্লাইডিং ক্যারোসেল চালাতে পারবেন।',
+        addSlide: 'নতুন স্লাইড যোগ করুন',
+        editSlide: 'স্লাইড সম্পাদনা',
+        slideTitle: 'শিরোনাম (ঐচ্ছিক)',
+        slideSubtitle: 'সাবটাইটেল (ঐচ্ছিক)',
+        slideLink: 'লিংক ইউআরএল (যেমন: /shop অথবা /shop?category=airbuds)',
+        moveUp: 'উপরে নিন',
+        moveDown: 'নিচে নিন',
+        order: 'ক্রমিক নম্বর',
+        reorderSuccess: 'স্লাইডের ক্রম সফলভাবে সাজানো হয়েছে!',
+        noSlidesFound: 'এখনও কোনো হিরো ব্যানার যোগ করা হয়নি।',
+        originalQualityNotice: '১০০% অরিজিনাল এইচডি কোয়ালিটি: ব্যানার ইমেজ কোনো ক্ষতি বা ঘোলা ছাড়াই সম্পূর্ণ নিখুঁতভাবে সংরক্ষিত হবে।',
+
+        ordersManagement: 'অর্ডার ব্যবস্থাপনা',
+        allOrders: 'সব অর্ডার',
+        pending: 'অপেক্ষায়',
+        confirmed: 'নিশ্চিত',
+        processingOrders: 'প্রস্তুতি',
+        shipped: 'পাঠানো হয়েছে',
+        delivered: 'পৌঁছেছে',
+        cancelled: 'বাতিল',
+        customer: 'গ্রাহক',
+        orderDetails: 'অর্ডারের বিবরণ',
+        updateStatus: 'অর্ডার স্ট্যাটাস পরিবর্তন',
+        changeStatus: 'স্ট্যাটাস বদলান',
+        customerInfo: 'গ্রাহকের তথ্য',
+        deliveryInfo: 'ডেলিভারি তথ্য',
+        orderItems: 'অর্ডারের পণ্যসমূহ',
+        subtotal: 'সাবটোটাল',
+        deliveryCharge: 'ডেলিভারি চার্জ',
+        discount: 'ডিসকাউন্ট',
+        items: 'পণ্য',
+        quantity: 'পরিমাণ',
+        orderNumber: 'অর্ডার নম্বর',
+        paymentMethod: 'পেমেন্ট পদ্ধতি',
+        division: 'বিভাগ',
+        district: 'জেলা',
+        upazila: 'উপজেলা / থানা',
+        deliveryArea: 'ডেলিভারি এলাকা',
+        notes: 'অর্ডার নোট',
+
+        productManagement: 'পণ্য ব্যবস্থাপনা',
+        addProduct: 'নতুন পণ্য যোগ করুন',
+        editProduct: 'পণ্য সম্পাদনা',
+        allProducts: 'সব পণ্য',
+        inStock: 'স্টকে আছে',
+        outOfStock: 'স্টক শেষ',
+        stock: 'স্টক',
+        stockQuantity: 'স্টক সংখ্যা',
+        category: 'ক্যাটাগরি',
+        featured: 'ফিচার্ড',
+        sku: 'এসকেইউ',
+        salePrice: 'অফার মূল্য',
+        regularPrice: 'মূল দাম',
+        thumbnail: 'প্রধান ছবি',
+        gallery: 'গ্যালারি ছবি',
+        deleteProductConfirm: 'আপনি কি নিশ্চিত এই পণ্যটি মুছে ফেলতে চান? এটি আর ফিরিয়ে আনা যাবে না।',
+
+        couponManagement: 'কুপন ব্যবস্থাপনা',
+        newCoupon: 'নতুন কুপন',
+        editCoupon: 'কুপন সম্পাদনা',
+        couponCode: 'কুপন কোড',
+        discountType: 'ছাড়ের ধরন',
+        percentage: 'শতাংশ (%)',
+        fixedAmount: 'নির্দিষ্ট (৳)',
+        discountValue: 'ছাড়ের পরিমাণ',
+        minOrderAmount: 'সর্বনিম্ন অর্ডার (৳)',
+        maxDiscountAmount: 'সর্বোচ্চ ছাড় (৳)',
+        usageLimit: 'ব্যবহারের সীমা',
+        expiryDate: 'মেয়াদ শেষ',
+        timesUsed: 'বার ব্যবহৃত',
+        valid: 'সক্রিয়',
+        expired: 'মেয়াদ শেষ',
+        activateCoupon: 'সক্রিয় করুন',
+        noCouponsFound: 'কোনো কুপন পাওয়া যায়নি।',
+        deleteCouponConfirm: 'আপনি কি কুপনটি মুছতে চান',
+
+        codeSnippets: 'কোড স্নিপেটস',
+        snippetsManagement: 'কোড স্নিপেটস ও ট্র্যাকিং স্ক্রিপ্টস',
+        snippetsNotice: 'আপনার ওয়েবসাইটের হেডার, বডি বা ফুটারে ফেসবুক পিক্সেল, গুগল ট্যাগ ম্যানেজার (GTM), বা যেকোনো ট্র্যাকিং কোড সহজে যুক্ত করুন। থিম ফাইল এডিটের কোনো প্রয়োজন নেই।',
+        addSnippet: 'নতুন কোড যোগ করুন',
+        editSnippet: 'কোড সম্পাদনা',
+        snippetTitle: 'কোডের নাম বা বিবরণ',
+        placement: 'প্লেসমেন্ট লোকেশন',
+        headerLocation: 'হেডার (<head>)',
+        bodyLocation: 'বডি (<body> ট্যাগের পর)',
+        footerLocation: 'ফুটার (</body> ট্যাগের পূর্বে)',
+        codeContent: 'কোড / স্ক্রিপ্ট কনটেন্ট',
+        snippetActive: 'ওয়েবসাইটে এই কোডটি সক্রিয় রাখুন',
+        noSnippetsFound: 'এখনও কোনো কোড স্নিপেট যোগ করা হয়নি।',
+        deleteSnippetConfirm: 'আপনি কি নিশ্চিত এই কোড স্নিপেটটি মুছে ফেলতে চান?',
+        snippetPlaceholder: '<script>\n  // এখানে ফেসবুক পিক্সেল, জিটিএম বা কাস্টম স্ক্রিপ্ট পেস্ট করুন...\n</script>',
+        headerCount: 'হেডার কোড',
+        bodyCount: 'বডি কোড',
+        footerCount: 'ফুটার কোড',
+
+        socialLinks: 'সোশ্যাল মিডিয়া',
+        socialMediaManagement: 'সোশ্যাল মিডিয়া লিংক ও অ্যাকাউন্টস',
+        socialMediaNotice: 'আপনার অফিশিয়াল সোশ্যাল মিডিয়া প্রোফাইলগুলো পরিচালনা করুন। সক্রিয় লিংকগুলো স্বয়ংক্রিয়ভাবে হেডারের টপ বার এবং ফুটারে অফিসিয়াল আইকনসহ প্রদর্শিত হবে।',
+        addSocialLink: 'নতুন সোশ্যাল লিংক যোগ করুন',
+        editSocialLink: 'সোশ্যাল লিংক সম্পাদনা',
+        platform: 'প্ল্যাটফর্ম',
+        linkTitle: 'প্রোফাইলের নাম / টাইটেল',
+        targetUrl: 'টার্গেট URL / লিংক',
+        showInHeader: 'হেডারে দেখান',
+        showInFooter: 'ফুটারে দেখান',
+        deleteSocialLinkConfirm: 'আপনি কি এই সোশ্যাল লিংকটি মুছে ফেলতে চান',
     },
 };
 

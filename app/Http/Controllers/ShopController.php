@@ -74,6 +74,8 @@ class ShopController extends Controller
             'effective_price' => $product->effective_price,
             'is_on_sale' => $product->is_on_sale,
             'thumbnail_url' => $product->thumbnail_url,
+            'gallery_urls' => $product->gallery_urls,
+            'video_url' => $product->video_url,
             'in_stock' => $product->in_stock,
             'has_variants' => $product->has_variants,
             'category' => $product->category ? [

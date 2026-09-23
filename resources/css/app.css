@@ -160,3 +160,32 @@
     background-color: #ffffff !important;
 }
 
+/* ── Psychological CRO: Shimmer Sweep & Subtle Pulse for Buy Now CTA ── */
+@keyframes shimmer-sweep {
+    0% {
+        transform: translateX(-160%) skewX(-20deg);
+    }
+    70%, 100% {
+        transform: translateX(260%) skewX(-20deg);
+    }
+}
+
+.animate-shimmer-sweep {
+    animation: shimmer-sweep 3s ease-in-out infinite;
+}
+
+@keyframes pulse-subtle {
+    0%, 100% {
+        box-shadow: 0 4px 14px 0 rgba(45, 106, 39, 0.3);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 6px 20px 0 rgba(45, 106, 39, 0.5), 0 0 0 3px rgba(45, 106, 39, 0.12);
+        transform: scale(1.012);
+    }
+}
+
+.animate-pulse-subtle {
+    animation: pulse-subtle 3s ease-in-out infinite;
+}
+

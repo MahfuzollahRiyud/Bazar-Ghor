@@ -22,6 +22,9 @@ Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product
 Route::get('/cart', [PageController::class, 'cart'])->name('cart');
 Route::get('/about', [PageController::class, 'about'])->name('about');
 Route::get('/contact', [PageController::class, 'contact'])->name('contact');
+Route::get('/privacy-policy', [PageController::class, 'privacyPolicy'])->name('privacy-policy');
+Route::get('/return-policy', [PageController::class, 'returnPolicy'])->name('return-policy');
+Route::get('/terms', [PageController::class, 'terms'])->name('terms');
 
 // ─── Customer Account Routes ──────────────────────────────────────────────────
 Route::middleware(['auth'])->prefix('account')->name('account.')->group(function () {
@@ -77,6 +80,30 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
 
     // Customers
     Route::get('/customers', [DashboardCustomerController::class, 'index'])->name('customers.index');
+
+    // Hero Section / Banner & Slider Manager
+    Route::get('/hero', [\App\Http\Controllers\Dashboard\HeroController::class, 'index'])->name('hero.index');
+    Route::post('/hero/settings', [\App\Http\Controllers\Dashboard\HeroController::class, 'updateSettings'])->name('hero.settings');
+    Route::post('/hero/slides', [\App\Http\Controllers\Dashboard\HeroController::class, 'storeSlide'])->name('hero.slides.store');
+    Route::post('/hero/slides/{slide}', [\App\Http\Controllers\Dashboard\HeroController::class, 'updateSlide'])->name('hero.slides.update');
+    Route::delete('/hero/slides/{slide}', [\App\Http\Controllers\Dashboard\HeroController::class, 'destroySlide'])->name('hero.slides.destroy');
+    Route::post('/hero/reorder', [\App\Http\Controllers\Dashboard\HeroController::class, 'reorderSlides'])->name('hero.reorder');
+    Route::patch('/hero/slides/{slide}/toggle', [\App\Http\Controllers\Dashboard\HeroController::class, 'toggleStatus'])->name('hero.slides.toggle');
+
+    // Code Snippets (Custom Header, Body, Footer Tracking & Scripts)
+    Route::get('/snippets', [\App\Http\Controllers\Dashboard\CodeSnippetController::class, 'index'])->name('snippets.index');
+    Route::post('/snippets', [\App\Http\Controllers\Dashboard\CodeSnippetController::class, 'store'])->name('snippets.store');
+    Route::put('/snippets/{snippet}', [\App\Http\Controllers\Dashboard\CodeSnippetController::class, 'update'])->name('snippets.update');
+    Route::delete('/snippets/{snippet}', [\App\Http\Controllers\Dashboard\CodeSnippetController::class, 'destroy'])->name('snippets.destroy');
+    Route::patch('/snippets/{snippet}/toggle', [\App\Http\Controllers\Dashboard\CodeSnippetController::class, 'toggle'])->name('snippets.toggle');
+
+    // Social Links (Header & Footer Social Media Management)
+    Route::get('/social-links', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'index'])->name('social-links.index');
+    Route::post('/social-links', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'store'])->name('social-links.store');
+    Route::put('/social-links/{socialLink}', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'update'])->name('social-links.update');
+    Route::delete('/social-links/{socialLink}', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'destroy'])->name('social-links.destroy');
+    Route::patch('/social-links/{socialLink}/toggle', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'toggle'])->name('social-links.toggle');
+    Route::post('/social-links/reorder', [\App\Http\Controllers\Dashboard\SocialLinkController::class, 'reorder'])->name('social-links.reorder');
 });
 
 require __DIR__ . '/settings.php';

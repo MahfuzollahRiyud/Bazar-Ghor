@@ -30,6 +30,8 @@ class ProductController extends Controller
                 'effective_price' => $p->effective_price,
                 'is_on_sale' => $p->is_on_sale,
                 'thumbnail_url' => $p->thumbnail_url,
+                'gallery_urls' => $p->gallery_urls,
+                'video_url' => $p->video_url,
                 'in_stock' => $p->in_stock,
                 'has_variants' => $p->has_variants,
             ]);

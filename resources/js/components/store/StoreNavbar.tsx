@@ -3,16 +3,34 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link, usePage } from '@inertiajs/react';
 import { Globe, LogIn, Menu, Phone, Search, ShoppingCart, User, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import SocialIcon from '@/components/store/SocialIcon';
+
+interface SocialLinkItem {
+    id: number;
+    platform: string;
+    title: string;
+    url: string;
+    icon?: string;
+    color?: string;
+    is_active: boolean;
+    show_in_header: boolean;
+    show_in_footer: boolean;
+    sort_order: number;
+}
 
 export default function StoreNavbar() {
     const { totalItems } = useCart();
     const { language, toggleLanguage, t } = useLanguage();
-    const { url, props } = usePage<{ auth?: { user?: { id: number; name: string; email: string; role?: string } | null } }>();
+    const { url, props } = usePage<{
+        auth?: { user?: { id: number; name: string; email: string; role?: string } | null };
+        socialLinks?: SocialLinkItem[];
+    }>();
     const user = props.auth?.user;
+    const socialLinks = Array.isArray(props.socialLinks) ? props.socialLinks : [];
+    const headerSocialLinks = socialLinks.filter((s) => s && s.is_active && s.show_in_header);
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     const navLinks = [
@@ -40,11 +58,12 @@ export default function StoreNavbar() {
             {/* Top Bar */}
             <div className="bg-[#1f4e1b] py-2 text-white text-xs border-b border-green-800/40">
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4">
-                    <p className="font-medium tracking-wide">
+                    {/* Delivery charge info - visible on desktop, hidden on mobile */}
+                    <p className="hidden md:block font-medium tracking-wide">
                         {t.topBarDelivery}
                     </p>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 sm:gap-4">
                         <a
                             href="tel:01613545166"
                             className="flex items-center gap-1.5 font-medium transition-opacity hover:opacity-90"
@@ -53,25 +72,45 @@ export default function StoreNavbar() {
                             <span>01613-545166</span>
                         </a>
 
-                        <span className="text-green-400">|</span>
+                        <div className="flex items-center gap-3">
+                            <span className="text-green-400">|</span>
 
-                        {/* Auth / Account Quick Link */}
-                        {user ? (
-                            <Link
-                                href={user.role === 'admin' ? '/dashboard' : '/account'}
-                                className="flex items-center gap-1.5 font-semibold text-yellow-300 hover:text-white transition-colors"
-                            >
-                                <User size={13} />
-                                <span>{user.role === 'admin' ? t.dashboard : t.myAccount}</span>
-                            </Link>
-                        ) : (
-                            <Link
-                                href="/login"
-                                className="flex items-center gap-1.5 font-medium text-green-100 hover:text-white transition-colors"
-                            >
-                                <LogIn size={13} />
-                                <span>{t.loginOrRegister}</span>
-                            </Link>
+                            {/* Auth / Account Quick Link */}
+                            {user ? (
+                                <Link
+                                    href={user.role === 'admin' ? '/dashboard' : '/account'}
+                                    className="flex items-center gap-1.5 font-semibold text-yellow-300 hover:text-white transition-colors"
+                                >
+                                    <User size={13} />
+                                    <span>{user.role === 'admin' ? t.dashboard : t.myAccount}</span>
+                                </Link>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    className="flex items-center gap-1.5 font-medium text-green-100 hover:text-white transition-colors"
+                                >
+                                    <LogIn size={13} />
+                                    <span>{t.loginOrRegister}</span>
+                                </Link>
+                            )}
+                        </div>
+
+                        {/* Desktop Social Media Icons */}
+                        {headerSocialLinks.length > 0 && (
+                            <div className="hidden md:flex items-center gap-1.5 pl-2 border-l border-green-700/60">
+                                {headerSocialLinks.map((item) => (
+                                    <a
+                                        key={item.id}
+                                        href={item.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={item.title}
+                                        className="flex h-5 w-5 items-center justify-center rounded-full bg-green-900/70 text-green-200 transition-all hover:bg-white hover:text-[#1f4e1b] hover:scale-110"
+                                    >
+                                        <SocialIcon platform={item.platform} icon={item.icon} size={11} />
+                                    </a>
+                                ))}
+                            </div>
                         )}
                     </div>
                 </div>
@@ -80,16 +119,16 @@ export default function StoreNavbar() {
             {/* Main Navbar */}
             <nav
                 className={`sticky top-0 z-50 transition-all duration-300 ${
-                    scrolled ? 'bg-white/98 backdrop-blur-md shadow-md py-2.5' : 'bg-white py-3.5 border-b border-gray-100'
+                    scrolled ? 'bg-white/98 backdrop-blur-md shadow-md py-2' : 'bg-white py-2.5 sm:py-3 border-b border-gray-100'
                 }`}
             >
                 <div className="mx-auto flex max-w-7xl items-center justify-between px-4">
                     {/* Logo & Brand */}
-                    <Link href="/" className="flex items-center gap-2.5 group">
+                    <Link href="/" className="flex items-center gap-2.5 group shrink-0">
                         <img
                             src="/images/logo.png"
                             alt="Bazar Ghor"
-                            className="h-11 w-11 rounded-lg object-contain transition-transform group-hover:scale-105"
+                            className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-contain transition-transform group-hover:scale-105"
                             onError={(e) => {
                                 const target = e.currentTarget;
                                 target.style.display = 'none';
@@ -108,8 +147,27 @@ export default function StoreNavbar() {
                         </div>
                     </Link>
 
+                    {/* Desktop Search Bar (Always Open) */}
+                    <form onSubmit={handleSearch} className="hidden md:flex items-center relative w-56 lg:w-72 xl:w-84 mx-4">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={t.searchPlaceholder}
+                            className="w-full rounded-full border border-gray-200 bg-gray-50/90 pl-3.5 pr-9 py-1.5 text-xs lg:text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:bg-white focus:ring-2 focus:ring-[#2d6a27]/20 focus:outline-none transition-all shadow-2xs"
+                        />
+                        <button
+                            type="submit"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2d6a27] text-white hover:bg-[#23531e] transition-colors"
+                            aria-label={t.search}
+                            title={t.search}
+                        >
+                            <Search size={13} />
+                        </button>
+                    </form>
+
                     {/* Desktop Nav Links */}
-                    <div className="hidden items-center gap-7 md:flex">
+                    <div className="hidden items-center gap-5 lg:gap-7 md:flex">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.href}
@@ -125,36 +183,6 @@ export default function StoreNavbar() {
 
                     {/* Right Actions */}
                     <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Search */}
-                        {searchOpen ? (
-                            <form onSubmit={handleSearch} className="flex items-center gap-1.5">
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    placeholder={t.searchPlaceholder}
-                                    className="w-44 sm:w-60 rounded-full border border-gray-300 bg-white px-3.5 py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none shadow-xs"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setSearchOpen(false)}
-                                    className="rounded-full p-1 text-gray-500 hover:text-gray-800"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </form>
-                        ) : (
-                            <button
-                                onClick={() => setSearchOpen(true)}
-                                className="rounded-full p-2 text-gray-600 transition-colors hover:bg-green-50 hover:text-[#2d6a27]"
-                                aria-label="Search"
-                                title={t.search}
-                            >
-                                <Search size={20} />
-                            </button>
-                        )}
-
                         {/* Language Switcher Pill */}
                         <button
                             onClick={toggleLanguage}
@@ -198,6 +226,26 @@ export default function StoreNavbar() {
                             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
                         </button>
                     </div>
+                </div>
+
+                {/* Mobile Dedicated Search Row (Full Width Row on Mobile) */}
+                <div className="block md:hidden px-4 pt-1.5 pb-1">
+                    <form onSubmit={handleSearch} className="relative w-full">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={t.searchPlaceholder}
+                            className="w-full rounded-full border border-gray-200 bg-gray-50 pl-4 pr-10 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:bg-white focus:ring-2 focus:ring-[#2d6a27]/20 focus:outline-none transition-all shadow-2xs"
+                        />
+                        <button
+                            type="submit"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-[#2d6a27] text-white hover:bg-[#23531e] transition-colors"
+                            aria-label={t.search}
+                        >
+                            <Search size={12} />
+                        </button>
+                    </form>
                 </div>
 
                 {/* Mobile Menu */}

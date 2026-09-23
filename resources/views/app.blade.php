@@ -30,8 +30,34 @@
         <x-inertia::head>
             <title>{{ config('app.name', 'Laravel') }}</title>
         </x-inertia::head>
+
+        @php
+            $isStorefront = !request()->is('dashboard*') && !request()->is('admin*');
+            $snippets = $isStorefront ? \App\Models\CodeSnippet::getActiveGrouped() : null;
+        @endphp
+
+        {{-- Custom Storefront Header Code Snippets (e.g. Facebook Pixel, GTM, Meta Tags) --}}
+        @if($isStorefront && !empty($snippets['header']))
+            @foreach($snippets['header'] as $snippet)
+                {!! is_string($snippet) ? $snippet : (is_array($snippet) ? ($snippet['code'] ?? '') : ($snippet->code ?? '')) !!}
+            @endforeach
+        @endif
     </head>
     <body class="font-sans antialiased">
+        {{-- Custom Storefront Body Code Snippets (e.g. GTM / FB noscript, tracking widgets) --}}
+        @if($isStorefront && !empty($snippets['body']))
+            @foreach($snippets['body'] as $snippet)
+                {!! is_string($snippet) ? $snippet : (is_array($snippet) ? ($snippet['code'] ?? '') : ($snippet->code ?? '')) !!}
+            @endforeach
+        @endif
+
         <x-inertia::app />
+
+        {{-- Custom Storefront Footer Code Snippets (e.g. Chat widgets, analytics scripts) --}}
+        @if($isStorefront && !empty($snippets['footer']))
+            @foreach($snippets['footer'] as $snippet)
+                {!! is_string($snippet) ? $snippet : (is_array($snippet) ? ($snippet['code'] ?? '') : ($snippet->code ?? '')) !!}
+            @endforeach
+        @endif
     </body>
 </html>

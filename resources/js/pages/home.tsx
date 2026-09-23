@@ -1,7 +1,8 @@
 import ProductCard from '@/components/store/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Head, Link } from '@inertiajs/react';
-import { ChevronRight, Headphones, Package, Shield, ShoppingBag, Sparkles, Star, Truck, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Headphones, Package, Shield, ShoppingBag, Sparkles, Star, Truck, Zap } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 interface Category {
     id: number;
@@ -27,10 +28,20 @@ interface Product {
     category?: { id: number; name: string; slug: string } | null;
 }
 
+interface HeroSlideData {
+    id: number;
+    title?: string | null;
+    subtitle?: string | null;
+    link_url?: string | null;
+    image_url: string;
+}
+
 interface Props {
     categories: Category[];
     featuredProducts: Product[];
     newArrivals: Product[];
+    heroMode?: 'single' | 'slider';
+    heroSlides?: HeroSlideData[];
 }
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -44,8 +55,39 @@ const CATEGORY_ICONS: Record<string, string> = {
     others: '🛒',
 };
 
-export default function Home({ categories, featuredProducts, newArrivals }: Props) {
+export default function Home({
+    categories,
+    featuredProducts,
+    newArrivals,
+    heroMode = 'single',
+    heroSlides = [],
+}: Props) {
     const { t, language } = useLanguage();
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const safeSlides = heroSlides.length > 0 ? heroSlides : [
+        { id: 1, title: 'Bazar Ghor', link_url: '/shop', image_url: '/images/banner.jpg' },
+    ];
+
+    const isSlider = heroMode === 'slider' && safeSlides.length > 1;
+
+    // Autoplay for Slider mode
+    useEffect(() => {
+        if (!isSlider || isHovered) return;
+        const timer = setInterval(() => {
+            setCurrentSlide((prev) => (prev + 1) % safeSlides.length);
+        }, 4500);
+        return () => clearInterval(timer);
+    }, [isSlider, isHovered, safeSlides.length]);
+
+    const prevSlide = () => {
+        setCurrentSlide((prev) => (prev - 1 + safeSlides.length) % safeSlides.length);
+    };
+
+    const nextSlide = () => {
+        setCurrentSlide((prev) => (prev + 1) % safeSlides.length);
+    };
 
     const features = [
         { icon: <Shield size={24} />, title: t.feat1Title, desc: t.feat1Desc },
@@ -69,20 +111,101 @@ export default function Home({ categories, featuredProducts, newArrivals }: Prop
                 />
             </Head>
 
-            {/* ── Hero Section with Authentic Facebook Banner ─────────────────────────── */}
-            <section className="relative overflow-hidden bg-white border-b border-gray-100">
+            {/* ── Dynamic Hero Section (Single Banner or Multi-Slide Carousel) ── */}
+            <section
+                className="relative overflow-hidden bg-white border-b border-gray-100"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
                 <div className="relative w-full max-w-[1920px] mx-auto overflow-hidden">
-                    <img
-                        src="/images/banner.jpg"
-                        alt="Bazar Ghor — Shop Smart, Live Better"
-                        className="w-full h-auto aspect-[1024/381] sm:aspect-auto sm:h-[360px] md:h-[440px] lg:h-[500px] object-contain sm:object-cover object-center bg-white"
-                        onError={(e) => {
-                            const el = e.currentTarget;
-                            el.style.display = 'none';
-                            const fb = el.nextElementSibling as HTMLElement;
-                            if (fb) fb.classList.remove('hidden');
-                        }}
-                    />
+                    {isSlider ? (
+                        /* Slider Carousel Mode */
+                        <div className="relative w-full aspect-[1024/381] sm:aspect-auto sm:h-[360px] md:h-[440px] lg:h-[500px] overflow-hidden bg-gray-50">
+                            {safeSlides.map((slide, index) => {
+                                const isActive = index === currentSlide;
+                                const content = (
+                                    <img
+                                        src={slide.image_url}
+                                        alt={slide.title || 'Bazar Ghor Hero Banner'}
+                                        className="w-full h-full object-contain sm:object-cover object-center bg-white"
+                                    />
+                                );
+
+                                return (
+                                    <div
+                                        key={slide.id}
+                                        className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                                            isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
+                                        }`}
+                                    >
+                                        {slide.link_url ? (
+                                            <Link href={slide.link_url} className="block w-full h-full">
+                                                {content}
+                                            </Link>
+                                        ) : (
+                                            content
+                                        )}
+                                    </div>
+                                );
+                            })}
+
+                            {/* Carousel Arrows */}
+                            <button
+                                onClick={prevSlide}
+                                aria-label="Previous Slide"
+                                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-xs transition hover:bg-black/70 hover:scale-105 active:scale-95 shadow-md"
+                            >
+                                <ChevronLeft size={22} />
+                            </button>
+                            <button
+                                onClick={nextSlide}
+                                aria-label="Next Slide"
+                                className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-xs transition hover:bg-black/70 hover:scale-105 active:scale-95 shadow-md"
+                            >
+                                <ChevronRight size={22} />
+                            </button>
+
+                            {/* Carousel Dots Indicators */}
+                            <div className="absolute bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 sm:gap-2 rounded-full bg-black/30 backdrop-blur-xs px-3 py-1.5">
+                                {safeSlides.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setCurrentSlide(i)}
+                                        aria-label={`Go to slide ${i + 1}`}
+                                        className={`h-2 sm:h-2.5 rounded-full transition-all duration-300 ${
+                                            i === currentSlide ? 'w-6 sm:w-7 bg-white shadow-xs' : 'w-2 sm:w-2.5 bg-white/50 hover:bg-white/80'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        /* Single Banner Mode */
+                        (() => {
+                            const single = safeSlides[0];
+                            const bannerImg = (
+                                <img
+                                    src={single.image_url}
+                                    alt={single.title || 'Bazar Ghor — Shop Smart, Live Better'}
+                                    className="w-full h-auto aspect-[1024/381] sm:aspect-auto sm:h-[360px] md:h-[440px] lg:h-[500px] object-contain sm:object-cover object-center bg-white"
+                                    onError={(e) => {
+                                        const el = e.currentTarget;
+                                        el.style.display = 'none';
+                                        const fb = el.nextElementSibling as HTMLElement;
+                                        if (fb) fb.classList.remove('hidden');
+                                    }}
+                                />
+                            );
+
+                            return single.link_url ? (
+                                <Link href={single.link_url} className="block w-full">
+                                    {bannerImg}
+                                </Link>
+                            ) : (
+                                bannerImg
+                            );
+                        })()
+                    )}
 
                     {/* Fallback Hero if image missing */}
                     <div className="hidden absolute inset-0 bg-gradient-to-br from-[#143312] via-[#2d6a27] to-[#3d8f33]">

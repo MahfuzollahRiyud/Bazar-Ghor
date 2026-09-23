@@ -116,6 +116,11 @@ export interface Translations {
     footerBrandDesc: string;
     quickLinks: string;
     allRightsReserved: string;
+    privacyPolicy: string;
+    returnPolicy: string;
+    termsConditions: string;
+    customerCare: string;
+    facebookPage: string;
 }
 
 const TRANSLATIONS: Record<Language, Translations> = {
@@ -225,6 +230,11 @@ const TRANSLATIONS: Record<Language, Translations> = {
         footerBrandDesc: 'Your trusted online gadget destination. Premium quality electronics, smart accessories, and audio gear delivered nationwide with Cash on Delivery.',
         quickLinks: 'Quick Links',
         allRightsReserved: 'All rights reserved.',
+        privacyPolicy: 'Privacy Policy',
+        returnPolicy: 'Return & Refund Policy',
+        termsConditions: 'Terms & Conditions',
+        customerCare: 'Customer Care & Policies',
+        facebookPage: 'Facebook Page',
     },
     bn: {
         topBarDelivery: '🚚 ঢাকার ভেতরে ৳৬০ | ঢাকার বাইরে ৳১২০ ডেলিভারি চার্জ',
@@ -332,6 +342,11 @@ const TRANSLATIONS: Record<Language, Translations> = {
         footerBrandDesc: 'আপনার বিশ্বস্ত অনলাইন গ্যাজেট স্টোর। সেরা মানের পণ্য, সেরা দামে — দ্রুত ডেলিভারিতে আপনার দোরগোড়ায়।',
         quickLinks: 'দ্রুত লিংক',
         allRightsReserved: 'সর্বস্বত্ব সংরক্ষিত।',
+        privacyPolicy: 'প্রাইভেসি পলিসি',
+        returnPolicy: 'রিটার্ন ও রিফান্ড পলিসি',
+        termsConditions: 'শর্তাবলী ও নিয়মাবলী',
+        customerCare: 'গ্রাহক সেবা ও পলিসি',
+        facebookPage: 'ফেইসবুক পেইজ',
     },
 };
 

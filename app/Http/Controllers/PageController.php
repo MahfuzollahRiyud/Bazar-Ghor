@@ -21,4 +21,19 @@ class PageController extends Controller
     {
         return Inertia::render('cart');
     }
+
+    public function privacyPolicy(): Response
+    {
+        return Inertia::render('privacy-policy');
+    }
+
+    public function returnPolicy(): Response
+    {
+        return Inertia::render('return-policy');
+    }
+
+    public function terms(): Response
+    {
+        return Inertia::render('terms');
+    }
 }

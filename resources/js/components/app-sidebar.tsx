@@ -8,6 +8,9 @@ import {
     Store,
     Image as ImageIcon,
     Users,
+    SlidersHorizontal,
+    Code2,
+    Share2,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -45,6 +48,11 @@ export function AppSidebar() {
             icon: FolderOpen,
         },
         {
+            title: t.heroSection,
+            href: '/dashboard/hero',
+            icon: SlidersHorizontal,
+        },
+        {
             title: t.media,
             href: '/dashboard/media',
             icon: ImageIcon,
@@ -63,6 +71,16 @@ export function AppSidebar() {
             title: t.coupons,
             href: '/dashboard/coupons',
             icon: Tag,
+        },
+        {
+            title: t.codeSnippets,
+            href: '/dashboard/snippets',
+            icon: Code2,
+        },
+        {
+            title: t.socialLinks,
+            href: '/dashboard/social-links',
+            icon: Share2,
         },
     ];
 

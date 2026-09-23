@@ -1,7 +1,17 @@
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from '@inertiajs/react';
-import { Check, ShoppingCart, Star, Tag, Zap } from 'lucide-react';
+import {
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Play,
+    ShoppingCart,
+    Star,
+    Tag,
+    X,
+    Zap,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -14,6 +24,8 @@ interface Product {
     effective_price: number;
     is_on_sale: boolean;
     thumbnail_url?: string | null;
+    gallery_urls?: string[];
+    video_url?: string | null;
     in_stock: boolean;
     has_variants: boolean;
     short_description?: string | null;
@@ -24,10 +36,76 @@ interface ProductCardProps {
     product: Product;
 }
 
+function getEmbedVideoUrl(url?: string | null): string | null {
+    if (!url) return null;
+    const ytMatch = url.match(
+        /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|shorts\/|watch\?.+&v=))([\w-]{11})/
+    );
+    if (ytMatch && ytMatch[1]) {
+        return `https://www.youtube-nocookie.com/embed/${ytMatch[1]}?autoplay=1&rel=0`;
+    }
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch && vimeoMatch[1]) {
+        return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+    }
+    return url;
+}
+
 export default function ProductCard({ product }: ProductCardProps) {
     const { addItem } = useCart();
     const { t, language } = useLanguage();
     const [justAdded, setJustAdded] = useState(false);
+
+    // Interactive multi-image gallery & video playback
+    const [activeIdx, setActiveIdx] = useState(0);
+    const [isCardHovered, setIsCardHovered] = useState(false);
+    const [hasInteractedWithArrows, setHasInteractedWithArrows] = useState(false);
+    const [isPlayingVideo, setIsPlayingVideo] = useState(false);
+
+    // Image list (thumbnail + gallery images)
+    const images: string[] =
+        product.gallery_urls && product.gallery_urls.length > 0
+            ? product.gallery_urls
+            : product.thumbnail_url
+              ? [product.thumbnail_url]
+              : [];
+
+    // Determine which image index to display:
+    // If user explicitly clicked arrows, show activeIdx.
+    // If hovered and user hasn't clicked arrows, show second image (if available).
+    const displayedIndex =
+        !hasInteractedWithArrows && isCardHovered && images.length > 1
+            ? 1
+            : activeIdx % (images.length || 1);
+
+    const currentImage = images[displayedIndex] || product.thumbnail_url;
+    const embedVideoUrl = getEmbedVideoUrl(product.video_url);
+
+    const handlePrev = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setHasInteractedWithArrows(true);
+        setActiveIdx((prev) => (prev - 1 + images.length) % images.length);
+    };
+
+    const handleNext = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setHasInteractedWithArrows(true);
+        setActiveIdx((prev) => (prev + 1) % images.length);
+    };
+
+    const handlePlayVideo = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsPlayingVideo(true);
+    };
+
+    const handleCloseVideo = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsPlayingVideo(false);
+    };
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -74,30 +152,123 @@ export default function ProductCard({ product }: ProductCardProps) {
         window.location.href = '/checkout';
     };
 
-    const discountPercent = product.is_on_sale && product.sale_price
-        ? Math.round(((Number(product.price) - Number(product.sale_price)) / Number(product.price)) * 100)
-        : 0;
+    const discountPercent =
+        product.is_on_sale && product.sale_price
+            ? Math.round(((Number(product.price) - Number(product.sale_price)) / Number(product.price)) * 100)
+            : 0;
 
     return (
-        <div className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+        <div
+            onMouseEnter={() => setIsCardHovered(true)}
+            onMouseLeave={() => {
+                setIsCardHovered(false);
+                setHasInteractedWithArrows(false);
+            }}
+            className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+        >
             <Link href={`/product/${product.slug}`} className="block">
-                {/* Image */}
-                <div className="relative overflow-hidden bg-gray-50 aspect-square">
-                    {product.thumbnail_url ? (
-                        <img
-                            src={product.thumbnail_url}
-                            alt={product.name}
-                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                            loading="lazy"
-                        />
-                    ) : (
-                        <div className="flex h-full w-full items-center justify-center text-gray-300">
-                            <ShoppingCart size={40} />
+                {/* Media Container: Image with Gallery & In-Card Video Player */}
+                <div className="relative overflow-hidden bg-gray-50 aspect-square select-none">
+                    {/* In-Card Video Player */}
+                    {isPlayingVideo && embedVideoUrl ? (
+                        <div
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                            }}
+                            className="absolute inset-0 z-30 bg-black flex items-center justify-center animate-in fade-in duration-200"
+                        >
+                            <iframe
+                                src={embedVideoUrl}
+                                title={product.name}
+                                className="w-full h-full border-0"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                            />
+                            <button
+                                type="button"
+                                onClick={handleCloseVideo}
+                                className="absolute top-2 right-2 z-40 flex h-7 w-7 items-center justify-center rounded-full bg-black/80 text-white hover:bg-red-600 transition shadow-lg"
+                                title={language === 'bn' ? 'ভিডিও বন্ধ করুন' : 'Close Video'}
+                            >
+                                <X size={15} />
+                            </button>
                         </div>
+                    ) : (
+                        <>
+                            {currentImage ? (
+                                <img
+                                    src={currentImage}
+                                    alt={product.name}
+                                    className="h-full w-full object-cover transition-all duration-500 group-hover:scale-105"
+                                    loading="lazy"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-300">
+                                    <ShoppingCart size={40} />
+                                </div>
+                            )}
+
+                            {/* Arrow Navigation (Previous / Next) */}
+                            {images.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handlePrev}
+                                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 active:scale-95"
+                                        title="Previous image"
+                                    >
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleNext}
+                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 active:scale-95"
+                                        title="Next image"
+                                    >
+                                        <ChevronRight size={16} />
+                                    </button>
+
+                                    {/* Gallery Dots Indicator */}
+                                    <div className="absolute bottom-2 inset-x-0 z-20 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        {images.slice(0, 5).map((_, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    setHasInteractedWithArrows(true);
+                                                    setActiveIdx(i);
+                                                }}
+                                                className={`h-1.5 rounded-full transition-all ${
+                                                    displayedIndex === i
+                                                        ? 'w-4 bg-[#2d6a27]'
+                                                        : 'w-1.5 bg-black/30 hover:bg-black/60'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {/* Video Play Button Badge */}
+                            {product.video_url && (
+                                <button
+                                    type="button"
+                                    onClick={handlePlayVideo}
+                                    className="absolute bottom-2.5 right-2.5 z-20 flex items-center gap-1 rounded-full bg-red-600/90 hover:bg-red-600 text-white px-2.5 py-1 text-[11px] font-bold shadow-md hover:scale-105 active:scale-95 transition-all"
+                                    title={language === 'bn' ? 'ভিডিও দেখুন' : 'Watch Video'}
+                                >
+                                    <Play size={11} className="fill-current" />
+                                    <span>{language === 'bn' ? 'ভিডিও' : 'Video'}</span>
+                                </button>
+                            )}
+                        </>
                     )}
 
-                    {/* Badges */}
-                    <div className="absolute left-2.5 top-2.5 flex flex-col gap-1.5 z-10">
+                    {/* Discount & Featured Badges */}
+                    <div className="absolute left-2.5 top-2.5 flex flex-col gap-1.5 z-10 pointer-events-none">
                         {product.is_on_sale && discountPercent > 0 && (
                             <span className="flex items-center gap-1 rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white shadow-xs">
                                 <Tag size={10} />
@@ -113,7 +284,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     </div>
 
                     {!product.in_stock && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-xs z-10 pointer-events-none">
                             <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-red-600 shadow-sm">
                                 {t.outOfStock}
                             </span>
@@ -121,7 +292,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                     )}
                 </div>
 
-                {/* Info */}
+                {/* Product Info */}
                 <div className="p-3.5 sm:p-4">
                     <h3 className="mb-1 line-clamp-2 text-sm font-semibold leading-snug text-gray-800 transition-colors group-hover:text-[#2d6a27]">
                         {product.name}

@@ -1,5 +1,6 @@
+import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronLeft, Loader2 } from 'lucide-react';
+import { ChevronLeft, Loader2, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -38,16 +39,9 @@ interface Order {
     items: OrderItem[];
 }
 
-interface Props { order: Order; }
-
-const STATUS_OPTIONS = [
-    { value: 'pending', label: 'অপেক্ষায়' },
-    { value: 'confirmed', label: 'নিশ্চিত' },
-    { value: 'processing', label: 'প্রস্তুতি' },
-    { value: 'shipped', label: 'পাঠানো হয়েছে' },
-    { value: 'delivered', label: 'পৌঁছেছে' },
-    { value: 'cancelled', label: 'বাতিল' },
-];
+interface Props {
+    order: Order;
+}
 
 const STATUS_STYLES: Record<string, string> = {
     yellow: 'bg-yellow-100 text-yellow-700 border-yellow-200',
@@ -60,110 +54,224 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function OrderShow({ order }: Props) {
+    const { t, language } = useAdminLanguage();
     const [status, setStatus] = useState(order.status);
     const [updating, setUpdating] = useState(false);
+
+    const statusOptions = [
+        { value: 'pending', label: t.pending },
+        { value: 'confirmed', label: t.confirmed },
+        { value: 'processing', label: t.processingOrders },
+        { value: 'shipped', label: t.shipped },
+        { value: 'delivered', label: t.delivered },
+        { value: 'cancelled', label: t.cancelled },
+    ];
 
     const handleStatusUpdate = () => {
         if (status === order.status) return;
         setUpdating(true);
         router.patch(`/dashboard/orders/${order.id}/status`, { status }, {
-            onSuccess: () => toast.success('স্ট্যাটাস আপডেট হয়েছে!'),
-            onError: () => toast.error('সমস্যা হয়েছে।'),
-            onFinish: () => setUpdating(false),
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(language === 'en' ? 'Order status updated successfully!' : 'স্ট্যাটাস আপডেট হয়েছে!');
+                setUpdating(false);
+            },
+            onError: () => {
+                toast.error(language === 'en' ? 'Failed to update order status.' : 'সমস্যা হয়েছে।');
+                setUpdating(false);
+            },
         });
     };
 
     const handleDelete = () => {
-        if (!confirm('এই অর্ডার মুছে ফেলবেন?')) return;
+        if (!confirm(language === 'en' ? 'Are you sure you want to delete this order?' : 'এই অর্ডার মুছে ফেলবেন?')) return;
         router.delete(`/dashboard/orders/${order.id}`, {
-            onSuccess: () => toast.success('অর্ডার মুছে ফেলা হয়েছে।'),
+            onSuccess: () => toast.success(language === 'en' ? 'Order deleted successfully.' : 'অর্ডার মুছে ফেলা হয়েছে।'),
         });
     };
 
     return (
         <>
-            <Head title={`অর্ডার ${order.order_number}`} />
-            <div className="p-6 max-w-5xl mx-auto">
-                <div className="mb-6 flex items-center gap-4">
-                    <Link href="/dashboard/orders" className="flex items-center gap-1 text-gray-400 hover:text-gray-600">
-                        <ChevronLeft size={18} /> অর্ডার তালিকা
-                    </Link>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-800">{order.order_number}</h1>
-                        <p className="text-xs text-gray-400">{order.created_at}</p>
+            <Head title={`${order.order_number} — ${t.orderDetails}`} />
+            <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                        <Link
+                            href="/dashboard/orders"
+                            className="flex items-center gap-1 text-xs font-semibold text-gray-500 hover:text-gray-900 bg-white border border-gray-200 px-3 py-1.5 rounded-lg transition"
+                        >
+                            <ChevronLeft size={16} />
+                            <span>{language === 'en' ? 'Back to Orders' : 'অর্ডার তালিকা'}</span>
+                        </Link>
+                        <div>
+                            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 font-mono">
+                                {order.order_number}
+                            </h1>
+                            <p className="text-xs text-gray-500 mt-0.5">{order.created_at}</p>
+                        </div>
                     </div>
-                    <span className={`ml-auto rounded-full border px-3 py-1 text-sm font-semibold ${STATUS_STYLES[order.status_color] ?? STATUS_STYLES.gray}`}>
-                        {order.status_label}
+
+                    <span className={`self-start sm:self-auto rounded-full border px-3 py-1 text-xs font-bold capitalize ${STATUS_STYLES[order.status_color] ?? STATUS_STYLES.gray}`}>
+                        {order.status}
                     </span>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <div className="lg:col-span-2 space-y-6">
                         {/* Items */}
-                        <div className="rounded-2xl bg-white p-6 shadow-sm">
-                            <h2 className="mb-4 font-bold text-gray-800">অর্ডারকৃত পণ্য</h2>
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-xs">
+                            <h2 className="mb-4 font-bold text-gray-900 text-base">{t.orderItems}</h2>
                             <div className="space-y-3">
                                 {order.items.map((item) => (
-                                    <div key={item.id} className="flex items-center gap-3 border-b pb-3 last:border-0 last:pb-0">
-                                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50">
-                                            {item.thumbnail ? <img src={item.thumbnail} alt="" className="h-full w-full object-cover" /> : <div className="h-full w-full bg-gray-100 flex items-center justify-center text-xl">📦</div>}
+                                    <div key={item.id} className="flex items-center gap-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-gray-50 border border-gray-100">
+                                            {item.thumbnail ? (
+                                                <img src={item.thumbnail} alt="" className="h-full w-full object-cover" />
+                                            ) : (
+                                                <div className="h-full w-full bg-gray-100 flex items-center justify-center text-xl">📦</div>
+                                            )}
                                         </div>
-                                        <div className="flex-1">
-                                            <p className="font-medium text-gray-800 text-sm">{item.product_name}</p>
-                                            {item.variant_name && <p className="text-xs text-gray-400">{item.variant_name}</p>}
-                                            <p className="text-xs text-gray-500">৳{Number(item.price).toLocaleString()} × {item.quantity}</p>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-gray-900 text-sm truncate">{item.product_name}</p>
+                                            {item.variant_name && <p className="text-xs text-gray-500">{item.variant_name}</p>}
+                                            <p className="text-xs text-gray-500 mt-0.5">৳{Number(item.price).toLocaleString()} × {item.quantity}</p>
                                         </div>
-                                        <p className="font-semibold text-gray-800">৳{Number(item.total).toLocaleString()}</p>
+                                        <p className="font-bold text-gray-900 text-sm">৳{Number(item.total).toLocaleString()}</p>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="mt-4 border-t pt-4 space-y-1.5 text-sm">
-                                <div className="flex justify-between text-gray-600"><span>পণ্যের মূল্য</span><span>৳{Number(order.subtotal).toLocaleString()}</span></div>
-                                {Number(order.discount) > 0 && <div className="flex justify-between text-green-600"><span>ছাড় {order.coupon_code ? `(${order.coupon_code})` : ''}</span><span>-৳{Number(order.discount).toLocaleString()}</span></div>}
-                                <div className="flex justify-between text-gray-600"><span>ডেলিভারি ({order.delivery_area === 'inside_dhaka' ? 'ঢাকার ভেতরে' : 'ঢাকার বাইরে'})</span><span>৳{Number(order.delivery_charge).toLocaleString()}</span></div>
-                                <div className="flex justify-between font-bold text-gray-800 text-base border-t pt-1.5"><span>সর্বমোট</span><span className="text-[#2d6a27]">৳{Number(order.total).toLocaleString()}</span></div>
+                            <div className="mt-5 border-t border-gray-100 pt-4 space-y-2 text-xs sm:text-sm">
+                                <div className="flex justify-between text-gray-600">
+                                    <span>{t.subtotal}</span>
+                                    <span>৳{Number(order.subtotal).toLocaleString()}</span>
+                                </div>
+                                {Number(order.discount) > 0 && (
+                                    <div className="flex justify-between text-emerald-600 font-semibold">
+                                        <span>{t.discount} {order.coupon_code ? `(${order.coupon_code})` : ''}</span>
+                                        <span>-৳{Number(order.discount).toLocaleString()}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-gray-600">
+                                    <span>
+                                        {t.deliveryCharge} (
+                                        {order.delivery_area === 'inside_dhaka'
+                                            ? (language === 'en' ? 'Inside Dhaka' : 'ঢাকার ভেতরে')
+                                            : (language === 'en' ? 'Outside Dhaka' : 'ঢাকার বাইরে')}
+                                        )
+                                    </span>
+                                    <span>৳{Number(order.delivery_charge).toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-gray-900 text-base border-t border-gray-100 pt-2">
+                                    <span>{t.total}</span>
+                                    <span className="text-[#2d6a27]">৳{Number(order.total).toLocaleString()}</span>
+                                </div>
                             </div>
                         </div>
 
                         {/* Customer Info */}
-                        <div className="rounded-2xl bg-white p-6 shadow-sm">
-                            <h2 className="mb-4 font-bold text-gray-800">গ্রাহকের তথ্য</h2>
-                            <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div><p className="text-gray-400 text-xs mb-0.5">নাম</p><p className="font-medium text-gray-800">{order.customer_name}</p></div>
-                                <div><p className="text-gray-400 text-xs mb-0.5">ফোন</p><a href={`tel:${order.customer_phone}`} className="font-medium text-[#2d6a27] hover:underline">{order.customer_phone}</a></div>
-                                {order.customer_email && <div><p className="text-gray-400 text-xs mb-0.5">ইমেইল</p><p className="font-medium text-gray-800">{order.customer_email}</p></div>}
-                                <div><p className="text-gray-400 text-xs mb-0.5">বিভাগ</p><p className="font-medium text-gray-800">{order.division}</p></div>
-                                <div><p className="text-gray-400 text-xs mb-0.5">জেলা</p><p className="font-medium text-gray-800">{order.district}</p></div>
-                                {order.upazila && <div><p className="text-gray-400 text-xs mb-0.5">উপজেলা</p><p className="font-medium text-gray-800">{order.upazila}</p></div>}
-                                <div className="col-span-2"><p className="text-gray-400 text-xs mb-0.5">ঠিকানা</p><p className="font-medium text-gray-800">{order.address}</p></div>
-                                {order.notes && <div className="col-span-2"><p className="text-gray-400 text-xs mb-0.5">নোট</p><p className="text-gray-700 italic">{order.notes}</p></div>}
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-xs">
+                            <h2 className="mb-4 font-bold text-gray-900 text-base">{t.customerInfo}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+                                <div>
+                                    <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.name}</p>
+                                    <p className="font-semibold text-gray-900">{order.customer_name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.phone}</p>
+                                    <a href={`tel:${order.customer_phone}`} className="font-semibold text-[#2d6a27] hover:underline font-mono">
+                                        {order.customer_phone}
+                                    </a>
+                                </div>
+                                {order.customer_email && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.email}</p>
+                                        <p className="font-semibold text-gray-900">{order.customer_email}</p>
+                                    </div>
+                                )}
+                                <div>
+                                    <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.division}</p>
+                                    <p className="font-semibold text-gray-900">{order.division}</p>
+                                </div>
+                                <div>
+                                    <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.district}</p>
+                                    <p className="font-semibold text-gray-900">{order.district}</p>
+                                </div>
+                                {order.upazila && (
+                                    <div>
+                                        <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.upazila}</p>
+                                        <p className="font-semibold text-gray-900">{order.upazila}</p>
+                                    </div>
+                                )}
+                                <div className="sm:col-span-2">
+                                    <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.address}</p>
+                                    <p className="font-medium text-gray-800">{order.address}</p>
+                                </div>
+                                {order.notes && (
+                                    <div className="sm:col-span-2 bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                        <p className="text-gray-400 text-xs uppercase font-bold mb-0.5">{t.notes}</p>
+                                        <p className="text-gray-700 italic">{order.notes}</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Actions */}
+                    {/* Actions Side Column */}
                     <div className="space-y-6">
-                        <div className="rounded-2xl bg-white p-6 shadow-sm">
-                            <h2 className="mb-4 font-bold text-gray-800">স্ট্যাটাস আপডেট</h2>
-                            <select value={status} onChange={(e) => setStatus(e.target.value)}
-                                className="mb-3 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none">
-                                {STATUS_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                        {/* Status Update Card */}
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs">
+                            <h2 className="mb-3 font-bold text-gray-900 text-sm uppercase tracking-wider">
+                                {t.updateStatus}
+                            </h2>
+                            <select
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value)}
+                                className="mb-3 w-full rounded-xl border border-gray-300 px-3.5 py-2.5 text-xs sm:text-sm font-medium focus:border-[#2d6a27] focus:outline-none bg-white"
+                            >
+                                {statusOptions.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </option>
+                                ))}
                             </select>
-                            <button onClick={handleStatusUpdate} disabled={updating || status === order.status}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d6a27] py-2.5 font-semibold text-white hover:bg-[#3d8f33] disabled:opacity-50">
-                                {updating ? <><Loader2 size={16} className="animate-spin" /> আপডেট হচ্ছে...</> : 'স্ট্যাটাস আপডেট'}
+                            <button
+                                onClick={handleStatusUpdate}
+                                disabled={updating || status === order.status}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d6a27] py-2.5 font-bold text-xs sm:text-sm text-white hover:bg-[#23531f] disabled:opacity-50 transition shadow-xs"
+                            >
+                                {updating ? (
+                                    <>
+                                        <Loader2 size={16} className="animate-spin" /> {t.processing}
+                                    </>
+                                ) : (
+                                    t.updateStatus
+                                )}
                             </button>
                         </div>
 
-                        <div className="rounded-2xl bg-white p-6 shadow-sm text-sm space-y-2">
-                            <h2 className="font-bold text-gray-800 mb-3">পেমেন্ট</h2>
-                            <div className="flex justify-between"><span className="text-gray-500">পদ্ধতি</span><span className="font-medium text-gray-700">Cash on Delivery</span></div>
-                            <div className="flex justify-between"><span className="text-gray-500">মোট</span><span className="font-bold text-[#2d6a27]">৳{Number(order.total).toLocaleString()}</span></div>
+                        {/* Payment Card */}
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs text-xs sm:text-sm space-y-2">
+                            <h2 className="font-bold text-gray-900 text-sm uppercase tracking-wider mb-2">
+                                {t.paymentMethod}
+                            </h2>
+                            <div className="flex justify-between text-gray-600">
+                                <span>{language === 'en' ? 'Method' : 'পদ্ধতি'}</span>
+                                <span className="font-semibold text-gray-900">Cash on Delivery (COD)</span>
+                            </div>
+                            <div className="flex justify-between text-gray-600 border-t border-gray-100 pt-2 font-bold">
+                                <span>{t.total}</span>
+                                <span className="text-[#2d6a27] text-sm">৳{Number(order.total).toLocaleString()}</span>
+                            </div>
                         </div>
 
-                        <button onClick={handleDelete} className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50">
-                            অর্ডার মুছুন
+                        {/* Delete Order Button */}
+                        <button
+                            onClick={handleDelete}
+                            className="flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 py-2.5 text-xs sm:text-sm font-semibold text-red-600 hover:bg-red-50 transition"
+                        >
+                            <Trash2 size={15} />
+                            <span>{language === 'en' ? 'Delete Order' : 'অর্ডার মুছুন'}</span>
                         </button>
                     </div>
                 </div>
@@ -171,3 +279,4 @@ export default function OrderShow({ order }: Props) {
         </>
     );
 }
+

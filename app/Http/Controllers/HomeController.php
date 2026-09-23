@@ -38,10 +38,34 @@ class HomeController extends Controller
             ->get()
             ->map(fn($p) => $this->formatProduct($p));
 
+        $heroMode = \App\Models\SiteSetting::get('hero_mode', 'single');
+        $heroSlides = \App\Models\HeroSlide::where('is_active', true)
+            ->orderBy('sort_order', 'asc')
+            ->get()
+            ->map(fn($slide) => [
+                'id' => $slide->id,
+                'title' => $slide->title,
+                'subtitle' => $slide->subtitle,
+                'link_url' => $slide->link_url,
+                'image_url' => $slide->image_url,
+            ]);
+
+        if ($heroSlides->isEmpty()) {
+            $heroSlides = collect([[
+                'id' => 1,
+                'title' => 'Bazar Ghor',
+                'subtitle' => null,
+                'link_url' => '/shop',
+                'image_url' => asset('images/banner.jpg'),
+            ]]);
+        }
+
         return Inertia::render('home', [
             'categories' => $categories,
             'featuredProducts' => $featuredProducts,
             'newArrivals' => $newArrivals,
+            'heroMode' => $heroMode,
+            'heroSlides' => $heroSlides,
         ]);
     }
 
@@ -57,6 +81,8 @@ class HomeController extends Controller
             'effective_price' => $product->effective_price,
             'is_on_sale' => $product->is_on_sale,
             'thumbnail_url' => $product->thumbnail_url,
+            'gallery_urls' => $product->gallery_urls,
+            'video_url' => $product->video_url,
             'in_stock' => $product->in_stock,
             'has_variants' => $product->has_variants,
             'is_featured' => $product->is_featured,
