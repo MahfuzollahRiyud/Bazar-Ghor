@@ -3,8 +3,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from '@inertiajs/react';
 import {
     Check,
-    ChevronLeft,
-    ChevronRight,
+    Images,
     Play,
     ShoppingCart,
     Star,
@@ -59,7 +58,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     // Interactive multi-image gallery & video playback
     const [activeIdx, setActiveIdx] = useState(0);
     const [isCardHovered, setIsCardHovered] = useState(false);
-    const [hasInteractedWithArrows, setHasInteractedWithArrows] = useState(false);
+    const [hasInteractedWithGallery, setHasInteractedWithGallery] = useState(false);
     const [isPlayingVideo, setIsPlayingVideo] = useState(false);
 
     // Image list (thumbnail + gallery images)
@@ -71,27 +70,20 @@ export default function ProductCard({ product }: ProductCardProps) {
               : [];
 
     // Determine which image index to display:
-    // If user explicitly clicked arrows, show activeIdx.
-    // If hovered and user hasn't clicked arrows, show second image (if available).
+    // If user clicked gallery button, show activeIdx.
+    // If hovered on PC and hasn't clicked yet, preview second image.
     const displayedIndex =
-        !hasInteractedWithArrows && isCardHovered && images.length > 1
+        !hasInteractedWithGallery && isCardHovered && images.length > 1
             ? 1
             : activeIdx % (images.length || 1);
 
     const currentImage = images[displayedIndex] || product.thumbnail_url;
     const embedVideoUrl = getEmbedVideoUrl(product.video_url);
 
-    const handlePrev = (e: React.MouseEvent) => {
+    const handleCycleGallery = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setHasInteractedWithArrows(true);
-        setActiveIdx((prev) => (prev - 1 + images.length) % images.length);
-    };
-
-    const handleNext = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setHasInteractedWithArrows(true);
+        setHasInteractedWithGallery(true);
         setActiveIdx((prev) => (prev + 1) % images.length);
     };
 
@@ -162,7 +154,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             onMouseEnter={() => setIsCardHovered(true)}
             onMouseLeave={() => {
                 setIsCardHovered(false);
-                setHasInteractedWithArrows(false);
+                setHasInteractedWithGallery(false);
             }}
             className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white border border-gray-100 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
         >
@@ -209,47 +201,18 @@ export default function ProductCard({ product }: ProductCardProps) {
                                 </div>
                             )}
 
-                            {/* Arrow Navigation (Previous / Next) */}
+                            {/* Single Multi-Image Gallery Cycle Button (Bottom-Left) */}
                             {images.length > 1 && (
-                                <>
-                                    <button
-                                        type="button"
-                                        onClick={handlePrev}
-                                        className="absolute left-1.5 top-1/2 -translate-y-1/2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 active:scale-95"
-                                        title="Previous image"
-                                    >
-                                        <ChevronLeft size={16} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleNext}
-                                        className="absolute right-1.5 top-1/2 -translate-y-1/2 z-20 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:scale-110 active:scale-95"
-                                        title="Next image"
-                                    >
-                                        <ChevronRight size={16} />
-                                    </button>
-
-                                    {/* Gallery Dots Indicator */}
-                                    <div className="absolute bottom-2 inset-x-0 z-20 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {images.slice(0, 5).map((_, i) => (
-                                            <button
-                                                key={i}
-                                                type="button"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    setHasInteractedWithArrows(true);
-                                                    setActiveIdx(i);
-                                                }}
-                                                className={`h-1.5 rounded-full transition-all ${
-                                                    displayedIndex === i
-                                                        ? 'w-4 bg-[#2d6a27]'
-                                                        : 'w-1.5 bg-black/30 hover:bg-black/60'
-                                                }`}
-                                            />
-                                        ))}
-                                    </div>
-                                </>
+                                <button
+                                    type="button"
+                                    onClick={handleCycleGallery}
+                                    className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-1 rounded-full bg-black/60 hover:bg-black/80 text-white px-2.5 py-1 text-[11px] font-medium backdrop-blur-xs shadow-md transition-all active:scale-95 cursor-pointer"
+                                    title={language === 'bn' ? `পরের ছবি (${displayedIndex + 1}/${images.length})` : `Next photo (${displayedIndex + 1}/${images.length})`}
+                                    aria-label="Next photo"
+                                >
+                                    <Images size={12} className="text-white shrink-0" />
+                                    <span className="text-[10px] font-mono leading-none">{displayedIndex + 1}/{images.length}</span>
+                                </button>
                             )}
 
                             {/* Video Play Button Badge */}
