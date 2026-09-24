@@ -1,3 +1,8 @@
+# ─── Hostinger LiteSpeed PHP Handler ───────────────────────────
+<FilesMatch "\.php$">
+    SetHandler application/x-httpd-alt-php84___lsphp
+</FilesMatch>
+
 # ─── Security Headers ──────────────────────────────────────────
 <IfModule mod_headers.c>
     Header always set X-Frame-Options "SAMEORIGIN"
@@ -33,7 +38,9 @@
         Options -MultiViews -Indexes
     </IfModule>
 
+    Options +FollowSymLinks
     RewriteEngine On
+    RewriteBase /
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
