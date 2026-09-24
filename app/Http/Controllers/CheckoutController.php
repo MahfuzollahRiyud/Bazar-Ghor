@@ -192,6 +192,7 @@ class CheckoutController extends Controller
                 $order->items()->create($item);
             }
 
+            $request->session()->put('last_placed_order_id', $order->id);
             DB::commit();
 
             return redirect()->route('order.success', $order->id);
@@ -201,8 +202,18 @@ class CheckoutController extends Controller
         }
     }
 
-    public function success(Order $order): Response
+    public function success(Request $request, Order $order)
     {
+        $user = $request->user();
+        $isOwner = $user && $order->user_id && $order->user_id === $user->id;
+        $isSessionOrder = $request->session()->get('last_placed_order_id') === $order->id;
+        $isAdmin = $user && $user->isAdmin();
+
+        // Prevent IDOR: allow only order owner, current session guest who just placed it, or store admin
+        if (!$isOwner && !$isSessionOrder && !$isAdmin) {
+            return redirect()->route('home')->with('error', 'অর্ডার বিবরণ দেখার অনুমতি নেই।');
+        }
+
         return Inertia::render('order-success', [
             'order' => [
                 'id' => $order->id,

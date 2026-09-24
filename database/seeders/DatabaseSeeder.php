@@ -11,16 +11,19 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Create Admin User
-        User::firstOrCreate(
+        $admin = User::firstOrCreate(
             ['email' => 'admin@bazarghor.com'],
             [
                 'name' => 'Bazar Ghor Admin',
                 'email' => 'admin@bazarghor.com',
                 'password' => Hash::make('admin123'),
-                'role' => 'admin',
                 'email_verified_at' => now(),
             ]
         );
+        if ($admin->role !== 'admin') {
+            $admin->role = 'admin';
+            $admin->save();
+        }
 
         $this->call([
             CategorySeeder::class,

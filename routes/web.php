@@ -37,12 +37,16 @@ Route::middleware(['auth'])->prefix('account')->name('account.')->group(function
 
 // ─── Checkout Routes ──────────────────────────────────────────────────────────
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
-Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])->name('checkout.coupon');
+Route::post('/checkout', [CheckoutController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('checkout.store');
+Route::post('/checkout/apply-coupon', [CheckoutController::class, 'applyCoupon'])
+    ->middleware('throttle:20,1')
+    ->name('checkout.coupon');
 Route::get('/order/success/{order}', [CheckoutController::class, 'success'])->name('order.success');
 
 // ─── Admin Dashboard Routes ───────────────────────────────────────────────────
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 });
 

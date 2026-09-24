@@ -29,7 +29,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  */
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'email', 'password', 'role', 'phone', 'division', 'district', 'upazila', 'address'])]
+#[Fillable(['name', 'email', 'password', 'phone', 'division', 'district', 'upazila', 'address'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
