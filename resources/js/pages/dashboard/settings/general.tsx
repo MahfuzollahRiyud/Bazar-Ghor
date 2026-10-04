@@ -6,8 +6,6 @@ import {
     Check,
     Globe,
     Image as ImageIcon,
-    Info,
-    Megaphone,
     Save,
     Upload,
 } from 'lucide-react';
@@ -20,7 +18,6 @@ interface SettingsData {
     site_logo_url: string;
     site_favicon: string | null;
     site_favicon_url: string;
-    marketing_cost: number;
 }
 
 interface Props {
@@ -45,7 +42,6 @@ export default function GeneralSettings({ settings }: Props) {
         media_logo_path: string;
         favicon: File | null;
         media_favicon_path: string;
-        marketing_cost: number;
     }>({
         site_title: settings.site_title || 'Bazar Ghor',
         site_tagline: settings.site_tagline || '',
@@ -53,7 +49,6 @@ export default function GeneralSettings({ settings }: Props) {
         media_logo_path: '',
         favicon: null,
         media_favicon_path: '',
-        marketing_cost: settings.marketing_cost || 0,
     });
 
     const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,43 +282,6 @@ export default function GeneralSettings({ settings }: Props) {
                                 </div>
                                 {errors.favicon && <p className="text-xs text-red-500">{errors.favicon}</p>}
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Marketing & Financial Settings */}
-                    <div className="rounded-2xl bg-white p-6 border border-gray-100 shadow-xs space-y-4">
-                        <div className="flex items-center gap-2 pb-3 border-b border-gray-100">
-                            <Megaphone className="text-[#2d6a27]" size={20} />
-                            <h2 className="font-bold text-gray-900 text-base">
-                                {language === 'en' ? 'Marketing & Ads Expense' : 'মার্কেটিং ও বিজ্ঞাপন খরচ'}
-                            </h2>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                                {language === 'en' ? 'Total Ad Spend / Marketing Cost (BDT)' : 'মোট মার্কেটিং বা বিজ্ঞাপন ব্যয় (টাকা)'}
-                            </label>
-                            <div className="relative max-w-sm">
-                                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">৳</span>
-                                <input
-                                    type="number"
-                                    step="any"
-                                    min="0"
-                                    value={data.marketing_cost}
-                                    onChange={(e) => setData('marketing_cost', parseFloat(e.target.value) || 0)}
-                                    className="w-full rounded-xl border border-gray-200 pl-8 pr-3.5 py-2.5 text-sm text-gray-900 focus:border-[#2d6a27] focus:ring-2 focus:ring-[#2d6a27]/20 focus:outline-none transition shadow-2xs font-mono"
-                                    placeholder="0.00"
-                                />
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1.5 flex items-center gap-1">
-                                <Info size={13} className="text-gray-400" />
-                                {language === 'en'
-                                    ? 'Used in Dashboard to deduct marketing budget from gross profit to compute net profit.'
-                                    : 'ড্যাশবোর্ডে গ্রস লাভ থেকে এই খরচ বাদ দিয়ে সঠিক নিট লাভ নির্ণয় করা হয়।'}
-                            </p>
-                            {errors.marketing_cost && (
-                                <p className="text-xs text-red-500 mt-1">{errors.marketing_cost}</p>
-                            )}
                         </div>
                     </div>
 

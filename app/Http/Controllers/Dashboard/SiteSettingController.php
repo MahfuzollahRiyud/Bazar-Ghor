@@ -21,7 +21,6 @@ class SiteSettingController extends Controller
             'site_logo_url' => SiteSetting::get('site_logo') ? asset('storage/' . SiteSetting::get('site_logo')) : '/images/logo.png',
             'site_favicon' => SiteSetting::get('site_favicon'),
             'site_favicon_url' => SiteSetting::get('site_favicon') ? asset('storage/' . SiteSetting::get('site_favicon')) : '/favicon.ico',
-            'marketing_cost' => (float) SiteSetting::get('marketing_cost', '0'),
         ];
 
         return Inertia::render('dashboard/settings/general', [
@@ -38,15 +37,10 @@ class SiteSettingController extends Controller
             'media_logo_path' => 'nullable|string',
             'favicon' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,ico,webp|max:2048',
             'media_favicon_path' => 'nullable|string',
-            'marketing_cost' => 'nullable|numeric|min:0',
         ]);
 
         SiteSetting::set('site_title', $request->site_title);
         SiteSetting::set('site_tagline', $request->site_tagline ?? '');
-
-        if ($request->has('marketing_cost')) {
-            SiteSetting::set('marketing_cost', (string) $request->marketing_cost);
-        }
 
         // Handle Logo
         if ($request->filled('media_logo_path')) {

@@ -1,6 +1,26 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Package, ShoppingBag, ShoppingCart, Tag, TrendingUp, Users, DollarSign, Wallet, Megaphone, Edit3, Check, X, HelpCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import {
+    Package,
+    ShoppingBag,
+    ShoppingCart,
+    Tag,
+    TrendingUp,
+    Users,
+    DollarSign,
+    Calendar,
+    Filter,
+    Plus,
+    Trash2,
+    Megaphone,
+    Edit3,
+    Check,
+    X,
+    HelpCircle,
+    ArrowUpRight,
+    ArrowDownRight,
+    Clock,
+} from 'lucide-react';
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 
 interface Stats {
@@ -18,6 +38,30 @@ interface Stats {
     total_categories: number;
 }
 
+interface ExpenseItem {
+    id: number;
+    expense_date: string;
+    amount: number;
+    title?: string | null;
+    notes?: string | null;
+}
+
+interface Analytics {
+    period: string;
+    start_date: string;
+    end_date: string;
+    total_orders: number;
+    pending_orders: number;
+    confirmed_orders: number;
+    delivered_orders: number;
+    revenue: number;
+    cogs: number;
+    gross_profit: number;
+    marketing_cost: number;
+    net_profit: number;
+    expenses: ExpenseItem[];
+}
+
 interface RecentOrder {
     id: number;
     order_number: string;
@@ -33,6 +77,7 @@ interface RecentOrder {
 
 interface Props {
     stats: Stats;
+    analytics?: Analytics;
     recentOrders: RecentOrder[];
 }
 
@@ -46,25 +91,97 @@ const STATUS_STYLES: Record<string, string> = {
     gray: 'bg-gray-100 text-gray-700',
 };
 
-export default function DashboardIndex({ stats, recentOrders }: Props) {
+export default function DashboardIndex({ stats, analytics, recentOrders }: Props) {
     const { t, language } = useAdminLanguage();
-    const [isEditingMarketing, setIsEditingMarketing] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        marketing_cost: stats.marketing_cost || 0,
+    // Active period state
+    const currentPeriod = analytics?.period || 'this_month';
+    const [customStart, setCustomStart] = useState(analytics?.start_date || '');
+    const [customEnd, setCustomEnd] = useState(analytics?.end_date || '');
+    const [showCustomRange, setShowCustomRange] = useState(currentPeriod === 'custom');
+
+    // Expense Modal & Drawer states
+    const [isAddExpenseModalOpen, setIsAddExpenseModalOpen] = useState(false);
+    const [showExpenseList, setShowExpenseList] = useState(false);
+
+    // Form for adding ad expense
+    const { data: expenseData, setData: setExpenseData, post: postExpense, processing: expenseProcessing, reset: resetExpense, errors: expenseErrors } = useForm({
+        expense_date: new Date().toISOString().split('T')[0],
+        amount: '',
+        title: 'Facebook Ads',
+        notes: '',
     });
 
-    const handleUpdateMarketingCost = (e: React.FormEvent) => {
+    const handlePeriodChange = (periodKey: string) => {
+        if (periodKey === 'custom') {
+            setShowCustomRange(true);
+            return;
+        }
+        setShowCustomRange(false);
+        router.get(
+            '/dashboard',
+            { period: periodKey },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
+    const handleApplyCustomRange = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/dashboard/settings/marketing-cost', {
+        if (!customStart) return;
+        router.get(
+            '/dashboard',
+            { period: 'custom', start_date: customStart, end_date: customEnd },
+            { preserveState: true, preserveScroll: true }
+        );
+    };
+
+    const handleAddExpenseSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        postExpense('/dashboard/marketing-expenses', {
             preserveScroll: true,
             onSuccess: () => {
-                setIsEditingMarketing(false);
+                resetExpense();
+                setIsAddExpenseModalOpen(false);
             },
         });
     };
 
-    const isProfitPositive = (stats.net_profit ?? 0) >= 0;
+    const handleDeleteExpense = (id: number) => {
+        if (confirm(language === 'en' ? 'Delete this ad expense record?' : 'এই বিজ্ঞাপনী খরচ রেকর্ডটি মুছে ফেলতে চান?')) {
+            router.delete(`/dashboard/marketing-expenses/${id}`, {
+                preserveScroll: true,
+            });
+        }
+    };
+
+    const activeAnalytics = analytics || {
+        period: 'all',
+        start_date: '',
+        end_date: '',
+        total_orders: stats.total_orders,
+        pending_orders: stats.pending_orders,
+        confirmed_orders: stats.confirmed_orders,
+        delivered_orders: stats.delivered_orders,
+        revenue: stats.total_revenue,
+        cogs: stats.total_cogs,
+        gross_profit: stats.gross_profit,
+        marketing_cost: stats.marketing_cost,
+        net_profit: stats.net_profit,
+        expenses: [],
+    };
+
+    const isProfitPositive = (activeAnalytics.net_profit ?? 0) >= 0;
+
+    const PERIOD_LABELS: Record<string, { en: string; bn: string }> = {
+        today: { en: 'Today', bn: 'আজকে' },
+        yesterday: { en: 'Yesterday', bn: 'গতকাল' },
+        last_7_days: { en: 'Last 7 Days', bn: 'গত ৭ দিন' },
+        this_month: { en: 'This Month', bn: 'চলতি মাস' },
+        last_month: { en: 'Last Month', bn: 'গত মাস' },
+        this_year: { en: 'This Year', bn: 'চলতি বছর' },
+        all: { en: 'All Time', bn: 'সর্বমোট' },
+        custom: { en: 'Custom Range', bn: 'কাস্টম তারিখ' },
+    };
 
     return (
         <>
@@ -77,132 +194,168 @@ export default function DashboardIndex({ stats, recentOrders }: Props) {
                         <h1 className="text-2xl font-bold text-gray-900">{t.dashboard}</h1>
                         <p className="text-gray-500 text-xs mt-0.5">Bazar Ghor Admin Management Portal</p>
                     </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setIsAddExpenseModalOpen(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2d6a27] hover:bg-[#23531e] text-white text-xs font-bold transition shadow-xs self-start sm:self-auto"
+                    >
+                        <Plus size={15} />
+                        {language === 'en' ? '+ Add Ad Spend' : '+ অ্যাড খরচ যোগ করুন'}
+                    </button>
                 </div>
 
-                {/* Profit & Financial Analytics Banner */}
-                <div className="rounded-2xl bg-gradient-to-br from-emerald-900 via-gray-900 to-gray-950 p-6 text-white shadow-lg border border-emerald-800/30">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+                {/* Profit & Financial Analytics with Date Filter */}
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-950 via-gray-900 to-gray-950 p-5 sm:p-6 text-white shadow-xl border border-emerald-800/30">
+                    {/* Top Bar of Section: Title & Date Filter Pills */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-5">
                         <div>
-                            <div className="flex items-center gap-2">
-                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs">
+                            <div className="flex items-center gap-2.5">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 font-black text-sm">
                                     ৳
                                 </span>
-                                <h2 className="text-lg font-bold text-white tracking-wide">
-                                    {language === 'en' ? 'Financial & Profit Analytics' : 'আর্থিক হিসাব ও নিট লাভ এনালাইটিক্স'}
-                                </h2>
+                                <div>
+                                    <h2 className="text-lg font-bold text-white tracking-wide">
+                                        {language === 'en' ? 'Profit & Financial Analytics' : 'লাভ ও আর্থিক হিসাব এনালাইটিক্স'}
+                                    </h2>
+                                    <span className="text-[11px] text-emerald-300 font-medium">
+                                        {PERIOD_LABELS[currentPeriod]?.[language === 'en' ? 'en' : 'bn'] || currentPeriod}
+                                        {activeAnalytics.start_date && activeAnalytics.end_date && (
+                                            <span className="ml-1 text-gray-400">
+                                                ({activeAnalytics.start_date} হতে {activeAnalytics.end_date})
+                                            </span>
+                                        )}
+                                    </span>
+                                </div>
                             </div>
-                            <p className="text-xs text-emerald-200/70 mt-1">
-                                {language === 'en'
-                                    ? 'Calculated based on delivered orders, product wholesale cost (COGS), and marketing expense.'
-                                    : 'ডেলিভারি সম্পন্ন হওয়া অর্ডার, পণ্যের পাইকারি খরচ (COGS) এবং মার্কেটিং ব্যয়ের ভিত্তিতে প্রস্তুতকৃত।'}
-                            </p>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setData('marketing_cost', stats.marketing_cost || 0);
-                                    setIsEditingMarketing(!isEditingMarketing);
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-emerald-100 transition border border-white/10"
-                            >
-                                <Edit3 size={13} />
-                                {language === 'en' ? 'Set Marketing Cost' : 'মার্কেটিং খরচ আপডেট'}
-                            </button>
+
+                        {/* Date Filter Pills */}
+                        <div className="flex flex-wrap items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/10">
+                            {[
+                                { key: 'today', label: language === 'en' ? 'Today' : 'আজকে' },
+                                { key: 'yesterday', label: language === 'en' ? 'Yesterday' : 'গতকাল' },
+                                { key: 'last_7_days', label: language === 'en' ? '7 Days' : '৭ দিন' },
+                                { key: 'this_month', label: language === 'en' ? 'This Month' : 'চলতি মাস' },
+                                { key: 'last_month', label: language === 'en' ? 'Last Month' : 'গত মাস' },
+                                { key: 'all', label: language === 'en' ? 'All' : 'সর্বমোট' },
+                                { key: 'custom', label: language === 'en' ? 'Custom' : 'কাস্টম' },
+                            ].map((p) => (
+                                <button
+                                    key={p.key}
+                                    type="button"
+                                    onClick={() => handlePeriodChange(p.key)}
+                                    className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition ${
+                                        currentPeriod === p.key
+                                            ? 'bg-emerald-600 text-white shadow-xs'
+                                            : 'text-gray-300 hover:text-white hover:bg-white/10'
+                                    }`}
+                                >
+                                    {p.label}
+                                </button>
+                            ))}
                         </div>
                     </div>
 
-                    {/* Marketing Cost Edit Form (if toggled) */}
-                    {isEditingMarketing && (
+                    {/* Custom Date Range Picker Bar (if toggled) */}
+                    {showCustomRange && (
                         <form
-                            onSubmit={handleUpdateMarketingCost}
-                            className="mt-4 p-4 rounded-xl bg-black/40 border border-emerald-500/30 flex flex-wrap items-center gap-3 animate-in fade-in duration-200"
+                            onSubmit={handleApplyCustomRange}
+                            className="mt-4 p-3.5 rounded-xl bg-black/50 border border-emerald-500/30 flex flex-wrap items-center gap-3 animate-in fade-in duration-150"
                         >
-                            <div className="flex-1 min-w-[200px]">
-                                <label className="block text-xs font-medium text-emerald-200 mb-1">
-                                    {language === 'en' ? 'Total Marketing / Ad Spend (BDT)' : 'মোট মার্কেটিং বা বিজ্ঞাপন খরচ (টাকা)'}
-                                </label>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">৳</span>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        min="0"
-                                        value={data.marketing_cost}
-                                        onChange={(e) => setData('marketing_cost', parseFloat(e.target.value) || 0)}
-                                        className="w-full bg-gray-900 border border-emerald-500/50 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                                        placeholder="0.00"
-                                        required
-                                    />
-                                </div>
-                                {errors.marketing_cost && (
-                                    <p className="text-xs text-red-400 mt-1">{errors.marketing_cost}</p>
-                                )}
+                            <div className="flex items-center gap-2">
+                                <Calendar size={14} className="text-emerald-400" />
+                                <span className="text-xs font-semibold text-emerald-200">
+                                    {language === 'en' ? 'Select Date Range:' : 'তারিখ পরিসীমা নির্বাচন:'}
+                                </span>
                             </div>
-                            <div className="flex items-center gap-2 pt-5">
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition disabled:opacity-50"
-                                >
-                                    {processing ? (language === 'en' ? 'Saving...' : 'সেভ হচ্ছে...') : (language === 'en' ? 'Save Cost' : 'খরচ সেভ করুন')}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        reset();
-                                        setIsEditingMarketing(false);
-                                    }}
-                                    className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium transition"
-                                >
-                                    {language === 'en' ? 'Cancel' : 'বাতিল'}
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="date"
+                                    value={customStart}
+                                    onChange={(e) => setCustomStart(e.target.value)}
+                                    className="bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500"
+                                    required
+                                />
+                                <span className="text-gray-400 text-xs">-</span>
+                                <input
+                                    type="date"
+                                    value={customEnd}
+                                    onChange={(e) => setCustomEnd(e.target.value)}
+                                    className="bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1 text-xs text-white focus:outline-none focus:border-emerald-500"
+                                />
                             </div>
+                            <button
+                                type="submit"
+                                className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition"
+                            >
+                                {language === 'en' ? 'Filter' : 'ফিল্টার করুন'}
+                            </button>
                         </form>
                     )}
 
-                    {/* Financial Metric Grid */}
+                    {/* Metric Cards Grid for Selected Period */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
-                        {/* Delivered Revenue */}
+                        {/* 1. Delivered Revenue */}
                         <div className="rounded-xl bg-white/5 p-4 border border-white/5">
                             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
-                                {language === 'en' ? 'Delivered Revenue' : 'ডেলিভারি রাজস্ব'}
+                                {language === 'en' ? 'Delivered Revenue' : 'ডেলিভারি বিক্রয়'}
                             </span>
                             <p className="text-2xl font-black text-emerald-400 mt-1">
-                                ৳{Number(stats.total_revenue || 0).toLocaleString()}
+                                ৳{Number(activeAnalytics.revenue || 0).toLocaleString()}
                             </p>
                             <span className="text-[11px] text-gray-400 mt-1 block">
-                                {stats.delivered_orders} {language === 'en' ? 'delivered orders' : 'টি সফল ডেলিভারি'}
+                                {activeAnalytics.delivered_orders} {language === 'en' ? 'delivered' : 'টি সফল ডেলিভারি'}
+                                {activeAnalytics.total_orders > 0 && ` (${activeAnalytics.total_orders} টি অর্ডারের মধ্যে)`}
                             </span>
                         </div>
 
-                        {/* Cost of Goods Sold */}
+                        {/* 2. Product Cost (COGS) */}
                         <div className="rounded-xl bg-white/5 p-4 border border-white/5">
                             <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
-                                {language === 'en' ? 'Product Cost (COGS)' : 'পণ্যের ক্রয়/পাইকারি খরচ'}
+                                {language === 'en' ? 'Wholesale Cost (COGS)' : 'পণ্যের ক্রয়/পাইকারি খরচ'}
                             </span>
                             <p className="text-2xl font-black text-amber-300 mt-1">
-                                ৳{Number(stats.total_cogs || 0).toLocaleString()}
+                                ৳{Number(activeAnalytics.cogs || 0).toLocaleString()}
                             </p>
                             <span className="text-[11px] text-gray-400 mt-1 block">
-                                {language === 'en' ? 'Based on product cost price' : 'পণ্যের কস্ট প্রাইস থেকে'}
+                                {language === 'en' ? 'Delivered items wholesale cost' : 'ডেলিভারি হওয়া পণ্যের ক্রয়মূল্য'}
                             </span>
                         </div>
 
-                        {/* Marketing Spend */}
-                        <div className="rounded-xl bg-white/5 p-4 border border-white/5">
-                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
-                                {language === 'en' ? 'Marketing Cost' : 'মার্কেটিং খরচ'}
-                            </span>
-                            <p className="text-2xl font-black text-blue-300 mt-1">
-                                ৳{Number(stats.marketing_cost || 0).toLocaleString()}
-                            </p>
-                            <span className="text-[11px] text-gray-400 mt-1 block">
-                                {language === 'en' ? 'Ad campaigns & promotion' : 'বিজ্ঞাপন ও প্রচারণা'}
-                            </span>
+                        {/* 3. Marketing / Ad Spend */}
+                        <div className="rounded-xl bg-white/5 p-4 border border-white/5 flex flex-col justify-between">
+                            <div>
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
+                                        {language === 'en' ? 'Ad / Marketing Spend' : 'বিজ্ঞাপন / মার্কেটিং খরচ'}
+                                    </span>
+                                </div>
+                                <p className="text-2xl font-black text-blue-300 mt-1">
+                                    ৳{Number(activeAnalytics.marketing_cost || 0).toLocaleString()}
+                                </p>
+                            </div>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-white/5">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowExpenseList(!showExpenseList)}
+                                    className="text-[11px] text-blue-300 hover:underline font-medium"
+                                >
+                                    {showExpenseList
+                                        ? (language === 'en' ? 'Hide list ▲' : 'তালিকা লুকান ▲')
+                                        : (language === 'en' ? 'View list ▼' : 'খরচের তালিকা ▼')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddExpenseModalOpen(true)}
+                                    className="text-[11px] text-emerald-300 hover:underline font-bold"
+                                >
+                                    {language === 'en' ? '+ Add' : '+ খরচ যোগ'}
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Net Profit */}
+                        {/* 4. Net Profit */}
                         <div className={`rounded-xl p-4 border ${isProfitPositive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
                             <div className="flex items-center justify-between">
                                 <span className={`text-xs font-bold uppercase tracking-wider block ${isProfitPositive ? 'text-emerald-300' : 'text-red-300'}`}>
@@ -215,16 +368,65 @@ export default function DashboardIndex({ stats, recentOrders }: Props) {
                                 )}
                             </div>
                             <p className={`text-2xl font-black mt-1 ${isProfitPositive ? 'text-emerald-300' : 'text-red-300'}`}>
-                                ৳{Number(stats.net_profit || 0).toLocaleString()}
+                                ৳{Number(activeAnalytics.net_profit || 0).toLocaleString()}
                             </p>
                             <span className="text-[11px] text-gray-400 mt-1 block">
-                                {language === 'en' ? `Gross: ৳${Number(stats.gross_profit || 0).toLocaleString()}` : `গ্রস লাভ: ৳${Number(stats.gross_profit || 0).toLocaleString()}`}
+                                {language === 'en' ? `Gross: ৳${Number(activeAnalytics.gross_profit || 0).toLocaleString()}` : `গ্রস লাভ: ৳${Number(activeAnalytics.gross_profit || 0).toLocaleString()}`}
                             </span>
                         </div>
                     </div>
+
+                    {/* Breakdown Drawer of Ad Expenses in this period */}
+                    {showExpenseList && (
+                        <div className="mt-5 p-4 rounded-xl bg-black/40 border border-white/10 animate-in fade-in duration-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+                                    {language === 'en' ? 'Ad Spend Entries in this Period' : 'এই সময়সীমার বিজ্ঞাপনী খরচ তালিকা'}
+                                </h3>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddExpenseModalOpen(true)}
+                                    className="text-xs text-emerald-400 font-semibold hover:underline"
+                                >
+                                    + {language === 'en' ? 'Add New' : 'নতুন যোগ করুন'}
+                                </button>
+                            </div>
+
+                            {activeAnalytics.expenses && activeAnalytics.expenses.length > 0 ? (
+                                <div className="divide-y divide-white/5 max-h-56 overflow-y-auto pr-1">
+                                    {activeAnalytics.expenses.map((exp) => (
+                                        <div key={exp.id} className="py-2.5 flex items-center justify-between text-xs">
+                                            <div>
+                                                <span className="font-semibold text-white">{exp.title || 'Marketing'}</span>
+                                                <span className="text-gray-400 text-[11px] ml-2 font-mono">{exp.expense_date}</span>
+                                                {exp.notes && <p className="text-[11px] text-gray-400 mt-0.5">{exp.notes}</p>}
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="font-bold font-mono text-blue-300">
+                                                    ৳{Number(exp.amount).toLocaleString()}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteExpense(exp.id)}
+                                                    className="p-1 rounded text-red-400 hover:bg-red-500/20 transition"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-gray-400 py-2">
+                                    {language === 'en' ? 'No ad spend recorded for this period.' : 'এই সময়ে কোনো বিজ্ঞাপন খরচ এন্ট্রি নেই।'}
+                                </p>
+                            )}
+                        </div>
+                    )}
                 </div>
 
-                {/* Primary Stats Grid */}
+                {/* Primary All-Time Stats Grid */}
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                     <StatCard
                         icon={<ShoppingCart size={24} />}
@@ -249,7 +451,7 @@ export default function DashboardIndex({ stats, recentOrders }: Props) {
                     />
                     <StatCard
                         icon={<span className="text-xl font-bold">৳</span>}
-                        label={language === 'en' ? 'Total Revenue' : 'মোট আয়'}
+                        label={language === 'en' ? 'All-Time Revenue' : 'সর্বমোট আয়'}
                         value={`৳${Number(stats.total_revenue).toLocaleString()}`}
                         color="emerald"
                         href="/dashboard/orders"
@@ -300,9 +502,9 @@ export default function DashboardIndex({ stats, recentOrders }: Props) {
                             color: 'bg-blue-600 hover:bg-blue-700',
                         },
                         {
-                            label: language === 'en' ? 'Coupons' : 'কুপন ব্যবস্থাপনা',
-                            href: '/dashboard/coupons',
-                            color: 'bg-orange-500 hover:bg-orange-600',
+                            label: language === 'en' ? 'Site Settings' : 'সাইট সেটিংস',
+                            href: '/dashboard/settings/general',
+                            color: 'bg-gray-800 hover:bg-gray-900',
                         },
                     ].map((link) => (
                         <Link
@@ -390,6 +592,117 @@ export default function DashboardIndex({ stats, recentOrders }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Add Ad Expense Modal */}
+            {isAddExpenseModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+                    <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 space-y-4">
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                            <div className="flex items-center gap-2">
+                                <Megaphone className="text-[#2d6a27]" size={20} />
+                                <h3 className="font-bold text-gray-900 text-base">
+                                    {language === 'en' ? 'Add Ad / Marketing Expense' : 'বিজ্ঞাপনী খরচ যোগ করুন'}
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsAddExpenseModalOpen(false)}
+                                className="p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleAddExpenseSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    {language === 'en' ? 'Date' : 'তারিখ'} *
+                                </label>
+                                <input
+                                    type="date"
+                                    value={expenseData.expense_date}
+                                    onChange={(e) => setExpenseData('expense_date', e.target.value)}
+                                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#2d6a27] focus:ring-2 focus:ring-[#2d6a27]/20"
+                                    required
+                                />
+                                {expenseErrors.expense_date && (
+                                    <p className="text-xs text-red-500 mt-1">{expenseErrors.expense_date}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    {language === 'en' ? 'Amount (BDT)' : 'টাকার পরিমাণ'} *
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">৳</span>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        min="0.01"
+                                        value={expenseData.amount}
+                                        onChange={(e) => setExpenseData('amount', e.target.value)}
+                                        placeholder="0.00"
+                                        className="w-full rounded-xl border border-gray-200 pl-8 pr-3.5 py-2 text-sm text-gray-900 font-mono focus:outline-none focus:border-[#2d6a27] focus:ring-2 focus:ring-[#2d6a27]/20"
+                                        required
+                                    />
+                                </div>
+                                {expenseErrors.amount && (
+                                    <p className="text-xs text-red-500 mt-1">{expenseErrors.amount}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    {language === 'en' ? 'Campaign / Platform' : 'ক্যাম্পেইন বা প্ল্যাটফর্ম'}
+                                </label>
+                                <input
+                                    type="text"
+                                    value={expenseData.title}
+                                    onChange={(e) => setExpenseData('title', e.target.value)}
+                                    placeholder="Facebook Ads / TikTok / Google"
+                                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#2d6a27] focus:ring-2 focus:ring-[#2d6a27]/20"
+                                />
+                                {expenseErrors.title && (
+                                    <p className="text-xs text-red-500 mt-1">{expenseErrors.title}</p>
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    {language === 'en' ? 'Notes (Optional)' : 'নোট (ঐচ্ছিক)'}
+                                </label>
+                                <textarea
+                                    value={expenseData.notes}
+                                    onChange={(e) => setExpenseData('notes', e.target.value)}
+                                    rows={2}
+                                    placeholder="ক্যাম্পেইন ডিটেইলস..."
+                                    className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 focus:outline-none focus:border-[#2d6a27] focus:ring-2 focus:ring-[#2d6a27]/20"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsAddExpenseModalOpen(false)}
+                                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition"
+                                >
+                                    {language === 'en' ? 'Cancel' : 'বাতিল'}
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={expenseProcessing}
+                                    className="px-5 py-2 bg-[#2d6a27] hover:bg-[#23531e] text-white rounded-xl text-xs font-bold transition disabled:opacity-50"
+                                >
+                                    {expenseProcessing
+                                        ? (language === 'en' ? 'Saving...' : 'সেভ হচ্ছে...')
+                                        : (language === 'en' ? 'Save Expense' : 'খরচ সেভ করুন')}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

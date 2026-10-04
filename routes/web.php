@@ -126,10 +126,14 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::delete('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('/blogs/{blog}/toggle', [\App\Http\Controllers\Dashboard\BlogController::class, 'toggle'])->name('blogs.toggle');
 
-    // Site Settings (Title, Logo, Favicon & Marketing Cost)
+    // Site Settings (Title, Logo & Favicon)
     Route::get('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'index'])->name('settings.general');
     Route::post('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'update'])->name('settings.update');
     Route::post('/settings/marketing-cost', [DashboardController::class, 'updateMarketingCost'])->name('settings.marketing-cost');
+
+    // Marketing Expenses
+    Route::post('/marketing-expenses', [DashboardController::class, 'storeMarketingExpense'])->name('marketing-expenses.store');
+    Route::delete('/marketing-expenses/{marketingExpense}', [DashboardController::class, 'destroyMarketingExpense'])->name('marketing-expenses.destroy');
 });
 
 require __DIR__ . '/settings.php';
