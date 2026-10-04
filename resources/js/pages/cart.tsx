@@ -143,10 +143,15 @@ export default function Cart() {
 
                                 <Link
                                     href="/checkout"
-                                    className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d6a27] py-4 font-bold text-sm text-white shadow-md transition hover:bg-[#23531f] active:scale-95"
+                                    className="group/btn relative overflow-hidden mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d6a27] py-4 font-bold text-sm text-white shadow-md transition hover:bg-[#23531f] active:scale-95 animate-pulse-subtle"
                                 >
-                                    <span>{t.proceedToCheckout}</span>
-                                    <ArrowRight size={16} />
+                                    {/* Psychological Shimmer Light Sweep */}
+                                    <span
+                                        aria-hidden="true"
+                                        className="pointer-events-none absolute inset-0 -top-2 -bottom-2 w-2/3 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer-sweep"
+                                    />
+                                    <span className="relative z-10">{t.proceedToCheckout}</span>
+                                    <ArrowRight size={16} className="relative z-10 transition-transform group-hover/btn:translate-x-1" />
                                 </Link>
 
                                 <div className="mt-4 text-center">

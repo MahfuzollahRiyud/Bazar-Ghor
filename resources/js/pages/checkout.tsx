@@ -590,13 +590,22 @@ export default function Checkout({ currentUser }: CheckoutProps) {
                                 <button
                                     type="submit"
                                     disabled={submitting}
-                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d6a27] py-4 font-bold text-white shadow-md transition hover:bg-[#23531f] active:scale-95 disabled:opacity-60"
+                                    className="group/btn relative overflow-hidden mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#2d6a27] py-4 font-bold text-white shadow-md transition hover:bg-[#23531f] active:scale-95 disabled:opacity-60 animate-pulse-subtle"
                                 >
-                                    {submitting ? (
-                                        <><Loader2 size={18} className="animate-spin" /> {t.processing}</>
-                                    ) : (
-                                        <>{language === 'en' ? `Place Order • ৳${total.toLocaleString()}` : `অর্ডার নিশ্চিত করুন ৳${total.toLocaleString()}`}</>
+                                    {/* Psychological Shimmer Light Sweep */}
+                                    {!submitting && (
+                                        <span
+                                            aria-hidden="true"
+                                            className="pointer-events-none absolute inset-0 -top-2 -bottom-2 w-2/3 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer-sweep"
+                                        />
                                     )}
+                                    <span className="relative z-10 flex items-center justify-center gap-2">
+                                        {submitting ? (
+                                            <><Loader2 size={18} className="animate-spin" /> {t.processing}</>
+                                        ) : (
+                                            <>{language === 'en' ? `Place Order • ৳${total.toLocaleString()}` : `অর্ডার নিশ্চিত করুন ৳${total.toLocaleString()}`}</>
+                                        )}
+                                    </span>
                                 </button>
                             </div>
                         </div>
