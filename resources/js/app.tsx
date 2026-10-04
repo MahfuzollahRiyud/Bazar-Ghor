@@ -9,13 +9,31 @@ import StorefrontLayout from '@/layouts/storefront-layout';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Bazar Ghor';
 
-const STOREFRONT_PAGES = ['home', 'shop', 'product-detail', 'cart', 'checkout', 'order-success', 'about', 'contact', 'account/index'];
+const STOREFRONT_PAGES = [
+    'home',
+    'shop',
+    'product-detail',
+    'cart',
+    'checkout',
+    'order-success',
+    'about',
+    'contact',
+    'privacy-policy',
+    'return-policy',
+    'terms',
+    'account/index',
+];
 
 void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case STOREFRONT_PAGES.includes(name) || name.startsWith('account/') || name.startsWith('blog/'):
+            case STOREFRONT_PAGES.includes(name) ||
+                name.startsWith('account/') ||
+                name.startsWith('blog/') ||
+                name === 'terms' ||
+                name === 'privacy-policy' ||
+                name === 'return-policy':
                 return StorefrontLayout;
             case name.startsWith('auth/'):
                 return AuthLayout;
