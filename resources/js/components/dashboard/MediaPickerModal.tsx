@@ -76,38 +76,50 @@ export default function MediaPickerModal({
     const handleUploadFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
 
+        const fileArray = Array.from(files);
+        const totalFiles = fileArray.length;
         setUploading(true);
-        const formData = new FormData();
-        Array.from(files).forEach((f) => formData.append('images[]', f));
+
+        const csrfToken = document.cookie
+            .split('; ')
+            .find((row) => row.startsWith('XSRF-TOKEN='))
+            ?.split('=')[1];
+
+        const CHUNK_SIZE = 2;
+        const allUploadedIds: number[] = [];
+        let errorCount = 0;
 
         try {
-            // Get CSRF token
-            const csrfToken = document.cookie
-                .split('; ')
-                .find((row) => row.startsWith('XSRF-TOKEN='))
-                ?.split('=')[1];
+            for (let i = 0; i < totalFiles; i += CHUNK_SIZE) {
+                const chunk = fileArray.slice(i, i + CHUNK_SIZE);
+                const formData = new FormData();
+                chunk.forEach((f) => formData.append('images[]', f));
 
-            const res = await fetch('/dashboard/media', {
-                method: 'POST',
-                headers: {
-                    'X-XSRF-TOKEN': csrfToken ? decodeURIComponent(csrfToken) : '',
-                    'Accept': 'application/json',
-                },
-                body: formData,
-            });
+                const res = await fetch('/dashboard/media', {
+                    method: 'POST',
+                    headers: {
+                        'X-XSRF-TOKEN': csrfToken ? decodeURIComponent(csrfToken) : '',
+                        'Accept': 'application/json',
+                    },
+                    body: formData,
+                });
 
-            if (res.ok) {
-                const json = await res.json();
-                toast.success('ছবি সফলভাবে WebP অপ্টিমাইজড হয়ে আপলোড হয়েছে!');
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.items && json.items.length > 0) {
+                        json.items.forEach((it: any) => allUploadedIds.push(it.id));
+                    }
+                } else {
+                    errorCount += chunk.length;
+                }
+            }
+
+            if (allUploadedIds.length > 0) {
+                toast.success(`${allUploadedIds.length}টি ছবি সফলভাবে WebP অপ্টিমাইজড হয়ে আপলোড হয়েছে!`);
                 await fetchMedia();
                 setTab('library');
-
-                // Auto-select uploaded items
-                if (json.items && json.items.length > 0) {
-                    const uploadedIds = json.items.map((it: any) => it.id);
-                    setSelectedIds(multiple ? uploadedIds : [uploadedIds[0]]);
-                }
-            } else {
+                setSelectedIds(multiple ? allUploadedIds : [allUploadedIds[0]]);
+            } else if (errorCount > 0) {
                 toast.error('ছবি আপলোডে সমস্যা হয়েছে।');
             }
         } catch (e) {

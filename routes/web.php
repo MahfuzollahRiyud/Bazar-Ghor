@@ -82,6 +82,8 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::get('/media', [\App\Http\Controllers\Dashboard\MediaController::class, 'index'])->name('media.index');
     Route::get('/media/list', [\App\Http\Controllers\Dashboard\MediaController::class, 'apiList'])->name('media.list');
     Route::post('/media', [\App\Http\Controllers\Dashboard\MediaController::class, 'store'])->name('media.store');
+    Route::post('/media/bulk-destroy', [\App\Http\Controllers\Dashboard\MediaController::class, 'bulkDestroy'])->name('media.bulk-destroy');
+    Route::match(['get', 'post'], '/media/bulk-download', [\App\Http\Controllers\Dashboard\MediaController::class, 'bulkDownload'])->name('media.bulk-download');
     Route::delete('/media/{media}', [\App\Http\Controllers\Dashboard\MediaController::class, 'destroy'])->name('media.destroy');
 
     // Customers

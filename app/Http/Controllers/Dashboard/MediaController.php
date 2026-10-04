@@ -8,6 +8,7 @@ use App\Services\ImageOptimizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -119,5 +120,76 @@ class MediaController extends Controller
         }
 
         return back()->with('success', 'মিডিয়া সফলভাবে মুছে ফেলা হয়েছে।');
+    }
+
+    /**
+     * Delete multiple media items in bulk.
+     */
+    public function bulkDestroy(Request $request)
+    {
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:media,id',
+        ]);
+
+        $count = 0;
+        $items = Media::whereIn('id', $validated['ids'])->get();
+        foreach ($items as $item) {
+            $item->delete();
+            $count++;
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => "{$count}টি মিডিয়া সফলভাবে মুছে ফেলা হয়েছে।",
+                'deleted_count' => $count,
+            ]);
+        }
+
+        return back()->with('success', "{$count}টি মিডিয়া সফলভাবে মুছে ফেলা হয়েছে।");
+    }
+
+    /**
+     * Download multiple media items as a ZIP.
+     */
+    public function bulkDownload(Request $request)
+    {
+        $ids = $request->input('ids');
+        if (is_string($ids)) {
+            $ids = explode(',', $ids);
+        }
+
+        $ids = array_filter(array_map('intval', (array) $ids));
+        if (empty($ids)) {
+            return back()->with('error', 'কোনো ছবি নির্বাচন করা হয়নি।');
+        }
+
+        $items = Media::whereIn('id', $ids)->get();
+        if ($items->isEmpty()) {
+            return back()->with('error', 'কোনো মিডিয়া পাওয়া যায়নি।');
+        }
+
+        $zipFileName = 'bazarghor_media_' . date('Ymd_His') . '.zip';
+        $zipPath = storage_path('app/' . $zipFileName);
+
+        $zip = new \ZipArchive();
+        if ($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE) === true) {
+            foreach ($items as $item) {
+                $disk = $item->disk ?? 'public';
+                if (Storage::disk($disk)->exists($item->file_path)) {
+                    $fileContent = Storage::disk($disk)->get($item->file_path);
+                    $cleanName = basename($item->file_path);
+                    $zip->addFromString($cleanName, $fileContent);
+                }
+            }
+            $zip->close();
+        }
+
+        if (file_exists($zipPath)) {
+            return response()->download($zipPath)->deleteFileAfterSend(true);
+        }
+
+        return back()->with('error', 'ZIP ফাইল তৈরি করা সম্ভব হয়নি।');
     }
 }
