@@ -1,6 +1,7 @@
 import ProductCard from '@/components/store/ProductCard';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { formatRichText } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Tag, Truck, Zap } from 'lucide-react';
 import { useState } from 'react';
@@ -273,7 +274,9 @@ export default function ProductDetail({ product, related }: Props) {
                         </h1>
 
                         {product.short_description && (
-                            <p className="mb-4 text-gray-600">{product.short_description}</p>
+                            <div className="mb-4 text-gray-600 text-sm whitespace-pre-line leading-relaxed">
+                                {product.short_description}
+                            </div>
                         )}
 
                         {/* Price */}
@@ -488,8 +491,8 @@ export default function ProductDetail({ product, related }: Props) {
                     <div className="mt-12">
                         <h2 className="mb-4 text-xl font-bold text-gray-800 border-b pb-2">পণ্যের বিবরণ</h2>
                         <div
-                            className="prose prose-sm max-w-none text-gray-700 leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: product.description }}
+                            className="prose prose-sm max-w-none text-gray-700 leading-relaxed [&>p]:mb-4 [&>p:last-child]:mb-0"
+                            dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }}
                         />
                     </div>
                 )}

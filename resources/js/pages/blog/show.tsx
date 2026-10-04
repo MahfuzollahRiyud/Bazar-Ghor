@@ -1,3 +1,4 @@
+import { formatRichText } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Head, Link } from '@inertiajs/react';
 import {
@@ -191,15 +192,15 @@ export default function BlogShow({ post, recentPosts, recommendedProducts }: Pro
 
                                 {/* Excerpt Highlight Box */}
                                 {post.excerpt && (
-                                    <div className="mb-8 rounded-2xl bg-green-50/70 border-l-4 border-[#2d6a27] p-4 sm:p-5 text-sm sm:text-base text-gray-800 font-medium leading-relaxed italic">
+                                    <div className="mb-8 rounded-2xl bg-green-50/70 border-l-4 border-[#2d6a27] p-4 sm:p-5 text-sm sm:text-base text-gray-800 font-medium leading-relaxed italic whitespace-pre-line">
                                         "{post.excerpt}"
                                     </div>
                                 )}
 
                                 {/* Article Body HTML Content */}
                                 <div
-                                    className="prose prose-green max-w-none text-gray-800 text-sm sm:text-base leading-relaxed space-y-4 font-normal"
-                                    dangerouslySetInnerHTML={{ __html: post.content }}
+                                    className="prose prose-green max-w-none text-gray-800 text-sm sm:text-base leading-relaxed space-y-4 font-normal [&>p]:mb-4 [&>p:last-child]:mb-0"
+                                    dangerouslySetInnerHTML={{ __html: formatRichText(post.content) }}
                                 />
 
                                 {/* Tags */}

@@ -296,27 +296,47 @@ export default function ProductEdit({ product, categories }: Props) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {language === 'bn' ? 'সংক্ষিপ্ত বিবরণ' : 'Short Description'}
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            {language === 'bn' ? 'সংক্ষিপ্ত বিবরণ' : 'Short Description'}
+                                        </label>
+                                        <span className="text-[11px] text-gray-400">
+                                            {language === 'bn' ? 'কোণ টেনে বড় করতে পারবেন' : 'Drag corner to resize'}
+                                        </span>
+                                    </div>
                                     <textarea
                                         name="short_description"
                                         value={form.short_description}
                                         onChange={handleChange}
-                                        rows={2}
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none resize-none"
+                                        onInput={(e) => {
+                                            const el = e.currentTarget;
+                                            el.style.height = 'auto';
+                                            el.style.height = `${Math.max(el.scrollHeight, 80)}px`;
+                                        }}
+                                        rows={3}
+                                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none resize-y min-h-[80px] leading-relaxed transition-colors"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {t.description}
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            {t.description}
+                                        </label>
+                                        <span className="text-[11px] text-emerald-700 font-medium">
+                                            {language === 'bn' ? 'প্যারাগ্রাফ ও স্পেস সংরক্ষিত হবে' : 'Paragraphs & line breaks preserved'}
+                                        </span>
+                                    </div>
                                     <textarea
                                         name="description"
                                         value={form.description}
                                         onChange={handleChange}
-                                        rows={5}
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none resize-none"
+                                        onInput={(e) => {
+                                            const el = e.currentTarget;
+                                            el.style.height = 'auto';
+                                            el.style.height = `${Math.max(el.scrollHeight, 200)}px`;
+                                        }}
+                                        rows={8}
+                                        className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-[#2d6a27] focus:outline-none resize-y min-h-[200px] leading-relaxed transition-colors font-normal"
                                     />
                                 </div>
                             </div>

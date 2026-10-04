@@ -234,14 +234,24 @@ export default function BlogEdit({ post, existingCategories }: Props) {
 
                                 {/* Excerpt */}
                                 <div>
-                                    <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1.5">
-                                        {t.postExcerpt}
-                                    </label>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-700">
+                                            {t.postExcerpt}
+                                        </label>
+                                        <span className="text-[11px] text-gray-400">
+                                            {language === 'bn' ? 'কোণ টেনে বড় করতে পারবেন' : 'Drag corner to resize'}
+                                        </span>
+                                    </div>
                                     <textarea
-                                        rows={2}
+                                        rows={3}
                                         value={excerpt}
                                         onChange={(e) => setExcerpt(e.target.value)}
-                                        className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-sm text-gray-900 focus:border-[#2d6a27] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2d6a27]/20"
+                                        onInput={(e) => {
+                                            const el = e.currentTarget;
+                                            el.style.height = 'auto';
+                                            el.style.height = `${Math.max(el.scrollHeight, 80)}px`;
+                                        }}
+                                        className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-sm text-gray-900 focus:border-[#2d6a27] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2d6a27]/20 resize-y min-h-[80px]"
                                     />
                                     {errors.excerpt && <p className="text-xs text-red-500 mt-1">{errors.excerpt}</p>}
                                 </div>
@@ -334,7 +344,13 @@ export default function BlogEdit({ post, existingCategories }: Props) {
                                     rows={14}
                                     value={content}
                                     onChange={(e) => setContent(e.target.value)}
-                                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-4 text-sm font-sans leading-relaxed text-gray-900 focus:border-[#2d6a27] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2d6a27]/20 font-normal"
+                                    onInput={(e) => {
+                                        const el = e.currentTarget;
+                                        el.style.height = 'auto';
+                                        el.style.height = `${Math.max(el.scrollHeight, 350)}px`;
+                                    }}
+                                    placeholder={language === 'bn' ? 'এখানে আপনার মূল আর্টিকেলের লেখা বা HTML পেস্ট করুন। প্যারাগ্রাফ ও স্পেস অবিকল সংরক্ষিত হবে...' : 'Write your article here. Supports paragraphs, headings, lists and links...'}
+                                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-4 text-sm font-sans leading-relaxed text-gray-900 focus:border-[#2d6a27] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2d6a27]/20 font-normal resize-y min-h-[350px]"
                                 />
                                 {errors.content && <p className="text-xs text-red-500 mt-1">{errors.content}</p>}
                             </div>
