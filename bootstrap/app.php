@@ -23,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             AddLinkHeadersForPreloadedAssets::class,
             \App\Http\Middleware\SecurityHeaders::class,
         ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'payment/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

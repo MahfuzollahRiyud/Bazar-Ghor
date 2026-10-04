@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\SiteSetting;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,71 @@ class CheckoutController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
+        $gateways = [];
+
+        // COD
+        if (SiteSetting::get('payment_cod_enabled', '1') === '1') {
+            $gateways[] = [
+                'id' => 'cash_on_delivery',
+                'name' => SiteSetting::get('payment_cod_title', 'Cash on Delivery (ক্যাশ অন ডেলিভারি)'),
+                'description' => SiteSetting::get('payment_cod_instructions', 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।'),
+                'type' => 'cod',
+            ];
+        }
+
+        // UddoktaPay
+        if (SiteSetting::get('payment_uddoktapay_enabled', '0') === '1' && filled(SiteSetting::get('payment_uddoktapay_api_key'))) {
+            $gateways[] = [
+                'id' => 'uddoktapay',
+                'name' => SiteSetting::get('payment_uddoktapay_title', 'Online Payment (বিকাশ / নগদ / রকেট / কার্ড)'),
+                'description' => 'বিকাশ, নগদ, রকেট বা ডেবিট/ক্রেডিট কার্ডের মাধ্যমে তাৎক্ষণিক ও নিরাপদ পেমেন্ট।',
+                'type' => 'online',
+                'badge' => 'bKash, Nagad, Rocket, Cards',
+            ];
+        }
+
+        // bKash Direct
+        if (SiteSetting::get('payment_bkash_enabled', '0') === '1' && filled(SiteSetting::get('payment_bkash_app_key'))) {
+            $gateways[] = [
+                'id' => 'bkash',
+                'name' => 'bKash Direct Merchant',
+                'description' => 'সরাসরি বিকাশ পেমেন্ট গেটওয়ে।',
+                'type' => 'online',
+                'badge' => 'bKash',
+            ];
+        }
+
+        // Nagad Direct
+        if (SiteSetting::get('payment_nagad_enabled', '0') === '1' && filled(SiteSetting::get('payment_nagad_merchant_id'))) {
+            $gateways[] = [
+                'id' => 'nagad',
+                'name' => 'Nagad Direct Merchant',
+                'description' => 'সরাসরি নগদ মার্চেন্ট পেমেন্ট।',
+                'type' => 'online',
+                'badge' => 'Nagad',
+            ];
+        }
+
+        // SSLCommerz
+        if (SiteSetting::get('payment_sslcz_enabled', '0') === '1' && filled(SiteSetting::get('payment_sslcz_store_id'))) {
+            $gateways[] = [
+                'id' => 'sslcommerz',
+                'name' => 'SSLCommerz',
+                'description' => 'কার্ড ও ইন্টারনেট ব্যাংকিং পেমেন্ট।',
+                'type' => 'online',
+                'badge' => 'Visa, Master, Amex, MFS',
+            ];
+        }
+
+        // Default fallback
+        if (empty($gateways)) {
+            $gateways[] = [
+                'id' => 'cash_on_delivery',
+                'name' => 'Cash on Delivery (ক্যাশ অন ডেলিভারি)',
+                'description' => 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।',
+                'type' => 'cod',
+            ];
+        }
 
         return Inertia::render('checkout', [
             'currentUser' => $user ? [
@@ -33,6 +99,7 @@ class CheckoutController extends Controller
                 'upazila' => $user->upazila,
                 'address' => $user->address,
             ] : null,
+            'paymentGateways' => $gateways,
         ]);
     }
 
@@ -184,7 +251,8 @@ class CheckoutController extends Controller
                 'discount' => $discount,
                 'total' => $total,
                 'status' => 'pending',
-                'payment_method' => 'cash_on_delivery',
+                'payment_method' => $request->input('payment_method', 'cash_on_delivery'),
+                'payment_status' => 'unpaid',
                 'notes' => $request->notes,
             ]);
 
@@ -195,10 +263,16 @@ class CheckoutController extends Controller
             $request->session()->put('last_placed_order_id', $order->id);
             DB::commit();
 
+            // Online Payment Redirection
+            if ($order->payment_method === 'uddoktapay') {
+                $paymentUrl = \App\Http\Controllers\PaymentController::initiateUddoktaPay($order);
+                return Inertia::location($paymentUrl);
+            }
+
             return redirect()->route('order.success', $order->id);
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['general' => 'অর্ডার দেওয়ায় সমস্যা হয়েছে। আবার চেষ্টা করুন।']);
+            return back()->withErrors(['general' => $e->getMessage() ?: 'অর্ডার দেওয়ায় সমস্যা হয়েছে। আবার চেষ্টা করুন।']);
         }
     }
 

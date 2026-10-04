@@ -1,7 +1,7 @@
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { CheckCircle, Eye, EyeOff, Loader2, Tag, Truck, User as UserIcon } from 'lucide-react';
+import { CheckCircle, CreditCard, Eye, EyeOff, Loader2, Tag, Truck, User as UserIcon, Wallet } from 'lucide-react';
 import { useState } from 'react';
 
 const DIVISIONS = [
@@ -15,6 +15,14 @@ const DIVISIONS = [
     { en: 'Mymensingh', bn: 'ময়মনসিংহ' },
 ];
 
+export interface PaymentGatewayItem {
+    id: string;
+    name: string;
+    description?: string;
+    type: 'cod' | 'online';
+    badge?: string;
+}
+
 interface CheckoutProps {
     currentUser?: {
         name?: string;
@@ -25,11 +33,21 @@ interface CheckoutProps {
         upazila?: string;
         address?: string;
     } | null;
+    paymentGateways?: PaymentGatewayItem[];
 }
 
-export default function Checkout({ currentUser }: CheckoutProps) {
+export default function Checkout({ currentUser, paymentGateways = [] }: CheckoutProps) {
     const { items, subtotal, clearCart } = useCart();
     const { t, language } = useLanguage();
+
+    const gateways = paymentGateways.length > 0 ? paymentGateways : [
+        {
+            id: 'cash_on_delivery',
+            name: language === 'en' ? 'Cash on Delivery (COD)' : 'ক্যাশ অন ডেলিভারি (COD)',
+            description: language === 'en' ? 'Pay with cash upon receiving your delivery at doorstep.' : 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।',
+            type: 'cod' as const,
+        }
+    ];
 
     const [createAccount, setCreateAccount] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -42,6 +60,7 @@ export default function Checkout({ currentUser }: CheckoutProps) {
         upazila: currentUser?.upazila || '',
         address: currentUser?.address || '',
         delivery_area: 'inside_dhaka' as 'inside_dhaka' | 'outside_dhaka',
+        payment_method: gateways[0]?.id || 'cash_on_delivery',
         notes: '',
         coupon_code: '',
         create_account: false,
@@ -484,15 +503,58 @@ export default function Checkout({ currentUser }: CheckoutProps) {
                                     <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2d6a27] text-xs text-white font-bold">3</span>
                                     {t.paymentMethod}
                                 </h2>
-                                <div className="flex items-center gap-3 rounded-xl border-2 border-[#2d6a27] bg-green-50/70 p-4 shadow-xs">
-                                    <Truck className="text-[#2d6a27] shrink-0" size={26} />
-                                    <div>
-                                        <p className="font-bold text-gray-900">Cash on Delivery (COD)</p>
-                                        <p className="text-xs text-gray-600 font-medium">
-                                            {language === 'en' ? 'Pay with cash upon receiving your delivery at doorstep.' : 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।'}
-                                        </p>
-                                    </div>
-                                    <CheckCircle className="ml-auto text-[#2d6a27] shrink-0" size={22} />
+                                
+                                <div className="space-y-3">
+                                    {gateways.map((gw) => {
+                                        const isSelected = form.payment_method === gw.id;
+                                        return (
+                                            <label
+                                                key={gw.id}
+                                                onClick={() => setForm((p) => ({ ...p, payment_method: gw.id }))}
+                                                className={`flex items-start sm:items-center gap-3.5 rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                                                    isSelected
+                                                        ? 'border-[#2d6a27] bg-green-50/70 shadow-xs'
+                                                        : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/50'
+                                                }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="payment_method"
+                                                    value={gw.id}
+                                                    checked={isSelected}
+                                                    onChange={() => setForm((p) => ({ ...p, payment_method: gw.id }))}
+                                                    className="mt-1 sm:mt-0 h-4 w-4 text-[#2d6a27] focus:ring-[#2d6a27] border-gray-300"
+                                                />
+                                                <div className={`p-2 rounded-lg shrink-0 ${isSelected ? 'bg-[#2d6a27]/10 text-[#2d6a27]' : 'bg-gray-100 text-gray-500'}`}>
+                                                    {gw.type === 'cod' ? (
+                                                        <Truck size={22} />
+                                                    ) : gw.id === 'uddoktapay' ? (
+                                                        <Wallet size={22} />
+                                                    ) : (
+                                                        <CreditCard size={22} />
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="font-bold text-sm text-gray-900">{gw.name}</span>
+                                                        {gw.badge && (
+                                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                                {gw.badge}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {gw.description && (
+                                                        <p className="text-xs text-gray-500 mt-0.5 font-medium leading-relaxed">
+                                                            {gw.description}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                                {isSelected && (
+                                                    <CheckCircle className="text-[#2d6a27] shrink-0 ml-auto hidden sm:block" size={20} />
+                                                )}
+                                            </label>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -602,8 +664,10 @@ export default function Checkout({ currentUser }: CheckoutProps) {
                                     <span className="relative z-10 flex items-center justify-center gap-2">
                                         {submitting ? (
                                             <><Loader2 size={18} className="animate-spin" /> {t.processing}</>
-                                        ) : (
+                                        ) : form.payment_method === 'cash_on_delivery' ? (
                                             <>{language === 'en' ? `Place Order • ৳${total.toLocaleString()}` : `অর্ডার নিশ্চিত করুন ৳${total.toLocaleString()}`}</>
+                                        ) : (
+                                            <>{language === 'en' ? `Proceed to Payment • ৳${total.toLocaleString()}` : `পেমেন্টে এগিয়ে যান ৳${total.toLocaleString()}`}</>
                                         )}
                                     </span>
                                 </button>

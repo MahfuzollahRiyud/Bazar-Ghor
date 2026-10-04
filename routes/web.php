@@ -126,14 +126,20 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::delete('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('/blogs/{blog}/toggle', [\App\Http\Controllers\Dashboard\BlogController::class, 'toggle'])->name('blogs.toggle');
 
-    // Site Settings (Title, Logo & Favicon)
+    // Site Settings (Title, Logo, Favicon & Payment Gateways)
     Route::get('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'index'])->name('settings.general');
     Route::post('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'update'])->name('settings.update');
+    Route::get('/settings/payment', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'payment'])->name('settings.payment');
+    Route::post('/settings/payment', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updatePayment'])->name('settings.payment.update');
     Route::post('/settings/marketing-cost', [DashboardController::class, 'updateMarketingCost'])->name('settings.marketing-cost');
 
     // Marketing Expenses
     Route::post('/marketing-expenses', [DashboardController::class, 'storeMarketingExpense'])->name('marketing-expenses.store');
     Route::delete('/marketing-expenses/{marketingExpense}', [DashboardController::class, 'destroyMarketingExpense'])->name('marketing-expenses.destroy');
 });
+
+// Online Payment Callbacks & Webhooks
+Route::get('/payment/uddoktapay/success', [\App\Http\Controllers\PaymentController::class, 'uddoktaPaySuccess'])->name('payment.uddoktapay.success');
+Route::post('/payment/uddoktapay/webhook', [\App\Http\Controllers\PaymentController::class, 'uddoktaPayWebhook'])->name('payment.uddoktapay.webhook');
 
 require __DIR__ . '/settings.php';

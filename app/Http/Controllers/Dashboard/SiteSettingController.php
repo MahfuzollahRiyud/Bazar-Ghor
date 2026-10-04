@@ -60,4 +60,120 @@ class SiteSettingController extends Controller
 
         return back()->with('success', 'ওয়েবসাইট সেটিংস সফলভাবে আপডেট হয়েছে।');
     }
+
+    public function payment(): Response
+    {
+        $gateways = [
+            'cod' => [
+                'enabled' => SiteSetting::get('payment_cod_enabled', '1') === '1',
+                'title' => SiteSetting::get('payment_cod_title', 'Cash on Delivery (ক্যাশ অন ডেলিভারি)'),
+                'instructions' => SiteSetting::get('payment_cod_instructions', 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।'),
+            ],
+            'uddoktapay' => [
+                'enabled' => SiteSetting::get('payment_uddoktapay_enabled', '0') === '1',
+                'api_key' => SiteSetting::get('payment_uddoktapay_api_key', ''),
+                'base_url' => SiteSetting::get('payment_uddoktapay_base_url', 'https://checkout.uddoktapay.com/api/checkout-v2'),
+                'mode' => SiteSetting::get('payment_uddoktapay_mode', 'live'),
+                'title' => SiteSetting::get('payment_uddoktapay_title', 'Online Payment (bKash / Nagad / Rocket / Cards)'),
+            ],
+            'bkash' => [
+                'enabled' => SiteSetting::get('payment_bkash_enabled', '0') === '1',
+                'app_key' => SiteSetting::get('payment_bkash_app_key', ''),
+                'app_secret' => SiteSetting::get('payment_bkash_app_secret', ''),
+                'username' => SiteSetting::get('payment_bkash_username', ''),
+                'password' => SiteSetting::get('payment_bkash_password', ''),
+                'mode' => SiteSetting::get('payment_bkash_mode', 'sandbox'),
+            ],
+            'nagad' => [
+                'enabled' => SiteSetting::get('payment_nagad_enabled', '0') === '1',
+                'merchant_id' => SiteSetting::get('payment_nagad_merchant_id', ''),
+                'public_key' => SiteSetting::get('payment_nagad_public_key', ''),
+                'private_key' => SiteSetting::get('payment_nagad_private_key', ''),
+                'mode' => SiteSetting::get('payment_nagad_mode', 'sandbox'),
+            ],
+            'sslcommerz' => [
+                'enabled' => SiteSetting::get('payment_sslcz_enabled', '0') === '1',
+                'store_id' => SiteSetting::get('payment_sslcz_store_id', ''),
+                'store_password' => SiteSetting::get('payment_sslcz_store_password', ''),
+                'mode' => SiteSetting::get('payment_sslcz_mode', 'sandbox'),
+            ],
+        ];
+
+        return Inertia::render('dashboard/settings/payment', [
+            'gateways' => $gateways,
+        ]);
+    }
+
+    public function updatePayment(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            // COD
+            'cod.enabled' => 'boolean',
+            'cod.title' => 'nullable|string|max:150',
+            'cod.instructions' => 'nullable|string|max:500',
+
+            // UddoktaPay
+            'uddoktapay.enabled' => 'boolean',
+            'uddoktapay.api_key' => 'nullable|string|max:255',
+            'uddoktapay.base_url' => 'nullable|string|max:255',
+            'uddoktapay.mode' => 'nullable|string|in:sandbox,live',
+            'uddoktapay.title' => 'nullable|string|max:150',
+
+            // bKash
+            'bkash.enabled' => 'boolean',
+            'bkash.app_key' => 'nullable|string|max:255',
+            'bkash.app_secret' => 'nullable|string|max:255',
+            'bkash.username' => 'nullable|string|max:255',
+            'bkash.password' => 'nullable|string|max:255',
+            'bkash.mode' => 'nullable|string|in:sandbox,live',
+
+            // Nagad
+            'nagad.enabled' => 'boolean',
+            'nagad.merchant_id' => 'nullable|string|max:255',
+            'nagad.public_key' => 'nullable|string',
+            'nagad.private_key' => 'nullable|string',
+            'nagad.mode' => 'nullable|string|in:sandbox,live',
+
+            // SSLCommerz
+            'sslcommerz.enabled' => 'boolean',
+            'sslcommerz.store_id' => 'nullable|string|max:255',
+            'sslcommerz.store_password' => 'nullable|string|max:255',
+            'sslcommerz.mode' => 'nullable|string|in:sandbox,live',
+        ]);
+
+        // Save COD
+        SiteSetting::set('payment_cod_enabled', !empty($data['cod']['enabled']) ? '1' : '0');
+        SiteSetting::set('payment_cod_title', $data['cod']['title'] ?? 'Cash on Delivery (ক্যাশ অন ডেলিভারি)');
+        SiteSetting::set('payment_cod_instructions', $data['cod']['instructions'] ?? 'পণ্য হাতে পেয়ে মূল্য পরিশোধ করুন।');
+
+        // Save UddoktaPay
+        SiteSetting::set('payment_uddoktapay_enabled', !empty($data['uddoktapay']['enabled']) ? '1' : '0');
+        SiteSetting::set('payment_uddoktapay_api_key', $data['uddoktapay']['api_key'] ?? '');
+        SiteSetting::set('payment_uddoktapay_base_url', $data['uddoktapay']['base_url'] ?? 'https://checkout.uddoktapay.com/api/checkout-v2');
+        SiteSetting::set('payment_uddoktapay_mode', $data['uddoktapay']['mode'] ?? 'live');
+        SiteSetting::set('payment_uddoktapay_title', $data['uddoktapay']['title'] ?? 'Online Payment (bKash / Nagad / Rocket / Cards)');
+
+        // Save bKash
+        SiteSetting::set('payment_bkash_enabled', !empty($data['bkash']['enabled']) ? '1' : '0');
+        SiteSetting::set('payment_bkash_app_key', $data['bkash']['app_key'] ?? '');
+        SiteSetting::set('payment_bkash_app_secret', $data['bkash']['app_secret'] ?? '');
+        SiteSetting::set('payment_bkash_username', $data['bkash']['username'] ?? '');
+        SiteSetting::set('payment_bkash_password', $data['bkash']['password'] ?? '');
+        SiteSetting::set('payment_bkash_mode', $data['bkash']['mode'] ?? 'sandbox');
+
+        // Save Nagad
+        SiteSetting::set('payment_nagad_enabled', !empty($data['nagad']['enabled']) ? '1' : '0');
+        SiteSetting::set('payment_nagad_merchant_id', $data['nagad']['merchant_id'] ?? '');
+        SiteSetting::set('payment_nagad_public_key', $data['nagad']['public_key'] ?? '');
+        SiteSetting::set('payment_nagad_private_key', $data['nagad']['private_key'] ?? '');
+        SiteSetting::set('payment_nagad_mode', $data['nagad']['mode'] ?? 'sandbox');
+
+        // Save SSLCommerz
+        SiteSetting::set('payment_sslcz_enabled', !empty($data['sslcommerz']['enabled']) ? '1' : '0');
+        SiteSetting::set('payment_sslcz_store_id', $data['sslcommerz']['store_id'] ?? '');
+        SiteSetting::set('payment_sslcz_store_password', $data['sslcommerz']['store_password'] ?? '');
+        SiteSetting::set('payment_sslcz_mode', $data['sslcommerz']['mode'] ?? 'sandbox');
+
+        return back()->with('success', 'পেমেন্ট গেটওয়ে সেটিংস সফলভাবে আপডেট হয়েছে।');
+    }
 }

@@ -1,6 +1,6 @@
 import MediaPickerModal, { type MediaItem } from '@/components/dashboard/MediaPickerModal';
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import {
     Building2,
     Check,
@@ -117,6 +117,22 @@ export default function GeneralSettings({ settings }: Props) {
                             {language === 'en' ? 'Saved successfully' : 'সফলভাবে সংরক্ষিত হয়েছে'}
                         </div>
                     )}
+                </div>
+
+                {/* Navigation Tabs (General vs Payment) */}
+                <div className="flex items-center gap-2 border-b border-gray-200 pb-px">
+                    <Link
+                        href="/dashboard/settings/general"
+                        className="px-4 py-2.5 text-xs font-bold text-[#2d6a27] border-b-2 border-[#2d6a27] transition"
+                    >
+                        {language === 'en' ? 'General Settings' : 'সাধারণ সেটিংস'}
+                    </Link>
+                    <Link
+                        href="/dashboard/settings/payment"
+                        className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent transition"
+                    >
+                        {language === 'en' ? 'Payment Gateways' : 'পেমেন্ট গেটওয়ে'}
+                    </Link>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
