@@ -96,6 +96,7 @@ class ProductController extends Controller
             'sku' => $p->sku,
             'price' => $p->price,
             'sale_price' => $p->sale_price,
+            'cost_price' => $p->cost_price,
             'stock_quantity' => $p->stock_quantity,
             'thumbnail_url' => $p->thumbnail_url,
             'is_active' => $p->is_active,
@@ -153,6 +154,7 @@ class ProductController extends Controller
             'is_featured' => filter_var($request->is_featured, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
             'is_active' => filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
             'sale_price' => $request->filled('sale_price') ? $request->sale_price : null,
+            'cost_price' => $request->filled('cost_price') ? $request->cost_price : null,
             'sku' => $request->filled('sku') ? $request->sku : null,
             'stock_quantity' => $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0,
         ]);
@@ -178,6 +180,7 @@ class ProductController extends Controller
             'sku' => 'nullable|string|max:100|unique:products,sku',
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0|lt:price',
+            'cost_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'nullable|integer|min:0',
             'video_url' => 'nullable|string|max:500',
             'has_variants' => 'boolean',
@@ -187,6 +190,8 @@ class ProductController extends Controller
             'media_thumbnail_path' => 'nullable|string',
             'media_image_paths' => 'nullable|array',
             'images.*' => 'nullable|image|max:5120',
+            'media_review_image_paths' => 'nullable|array',
+            'review_image_files.*' => 'nullable|image|max:5120',
             'variants' => 'nullable|array',
         ], [
             'name.required' => 'পণ্যের নাম দেওয়া আবশ্যক।',
@@ -217,6 +222,16 @@ class ProductController extends Controller
             }
         }
 
+        $reviewImagePaths = [];
+        if ($request->has('media_review_image_paths') && is_array($request->media_review_image_paths)) {
+            $reviewImagePaths = array_merge($reviewImagePaths, $request->media_review_image_paths);
+        }
+        if ($request->hasFile('review_image_files')) {
+            foreach ($request->file('review_image_files') as $rImage) {
+                $reviewImagePaths[] = ImageOptimizer::optimizeAndStoreWebp($rImage, 'reviews');
+            }
+        }
+
         $primaryCategoryId = $categoryIds[0];
 
         $product = Product::create([
@@ -228,6 +243,7 @@ class ProductController extends Controller
             'sku' => $request->sku,
             'price' => $request->price,
             'sale_price' => $request->sale_price,
+            'cost_price' => $request->cost_price,
             'stock_quantity' => $request->has_variants ? 0 : ($request->stock_quantity ?? 0),
             'video_url' => $request->video_url,
             'has_variants' => $request->boolean('has_variants'),
@@ -235,6 +251,7 @@ class ProductController extends Controller
             'is_active' => $request->boolean('is_active', true),
             'thumbnail' => $thumbnailPath,
             'images' => $imagePaths ?: null,
+            'review_images' => $reviewImagePaths ?: null,
         ]);
 
         $product->categories()->sync($categoryIds);
@@ -249,6 +266,7 @@ class ProductController extends Controller
                     'sku' => $variant['sku'] ?? null,
                     'price' => !empty($variant['price']) ? $variant['price'] : $request->price,
                     'sale_price' => !empty($variant['sale_price']) ? $variant['sale_price'] : null,
+                    'cost_price' => !empty($variant['cost_price']) ? $variant['cost_price'] : ($request->filled('cost_price') ? $request->cost_price : null),
                     'stock_quantity' => isset($variant['stock_quantity']) && $variant['stock_quantity'] !== '' ? (int) $variant['stock_quantity'] : 0,
                     'is_active' => true,
                 ]);
@@ -278,6 +296,7 @@ class ProductController extends Controller
                 'sku' => $product->sku,
                 'price' => $product->price,
                 'sale_price' => $product->sale_price,
+                'cost_price' => $product->cost_price,
                 'stock_quantity' => $product->stock_quantity,
                 'has_variants' => $product->has_variants,
                 'is_featured' => $product->is_featured,
@@ -288,6 +307,10 @@ class ProductController extends Controller
                     'path' => $img,
                     'url' => str_starts_with($img, 'http') ? $img : asset('storage/' . $img),
                 ]),
+                'review_images' => collect($product->review_images ?? [])->map(fn($img) => [
+                    'path' => $img,
+                    'url' => str_starts_with($img, 'http') ? $img : asset('storage/' . $img),
+                ]),
                 'variants' => $product->variants->map(fn($v) => [
                     'id' => $v->id,
                     'name' => $v->name,
@@ -295,6 +318,7 @@ class ProductController extends Controller
                     'sku' => $v->sku,
                     'price' => $v->price,
                     'sale_price' => $v->sale_price,
+                    'cost_price' => $v->cost_price,
                     'stock_quantity' => $v->stock_quantity,
                     'is_active' => $v->is_active,
                 ]),
@@ -311,6 +335,7 @@ class ProductController extends Controller
             'is_featured' => filter_var($request->is_featured, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? false,
             'is_active' => filter_var($request->is_active, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) ?? true,
             'sale_price' => $request->filled('sale_price') ? $request->sale_price : null,
+            'cost_price' => $request->filled('cost_price') ? $request->cost_price : null,
             'sku' => $request->filled('sku') ? $request->sku : null,
             'stock_quantity' => $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0,
         ]);
@@ -336,6 +361,7 @@ class ProductController extends Controller
             'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
             'price' => 'required|numeric|min:0',
             'sale_price' => 'nullable|numeric|min:0|lt:price',
+            'cost_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'nullable|integer|min:0',
             'video_url' => 'nullable|string|max:500',
             'has_variants' => 'boolean',
@@ -345,6 +371,9 @@ class ProductController extends Controller
             'media_thumbnail_path' => 'nullable|string',
             'media_image_paths' => 'nullable|array',
             'images.*' => 'nullable|image|max:5120',
+            'existing_review_images' => 'nullable|array',
+            'media_review_image_paths' => 'nullable|array',
+            'review_image_files.*' => 'nullable|image|max:5120',
             'variants' => 'nullable|array',
         ], [
             'name.required' => 'পণ্যের নাম দেওয়া আবশ্যক।',
@@ -375,6 +404,21 @@ class ProductController extends Controller
             }
         }
 
+        $reviewImagePaths = [];
+        if ($request->has('existing_review_images') && is_array($request->existing_review_images)) {
+            $reviewImagePaths = array_values(array_filter($request->existing_review_images));
+        } elseif (!$request->has('existing_review_images') && is_array($product->review_images)) {
+            $reviewImagePaths = $product->review_images;
+        }
+        if ($request->has('media_review_image_paths') && is_array($request->media_review_image_paths)) {
+            $reviewImagePaths = array_merge($reviewImagePaths, $request->media_review_image_paths);
+        }
+        if ($request->hasFile('review_image_files')) {
+            foreach ($request->file('review_image_files') as $rImage) {
+                $reviewImagePaths[] = ImageOptimizer::optimizeAndStoreWebp($rImage, 'reviews');
+            }
+        }
+
         $primaryCategoryId = $categoryIds[0];
 
         $product->update([
@@ -385,6 +429,7 @@ class ProductController extends Controller
             'sku' => $request->sku,
             'price' => $request->price,
             'sale_price' => $request->sale_price,
+            'cost_price' => $request->cost_price,
             'stock_quantity' => $request->has_variants ? 0 : ($request->stock_quantity ?? 0),
             'video_url' => $request->video_url,
             'has_variants' => $request->boolean('has_variants'),
@@ -392,6 +437,7 @@ class ProductController extends Controller
             'is_active' => $request->boolean('is_active'),
             'thumbnail' => $thumbnailPath,
             'images' => $imagePaths ?: null,
+            'review_images' => $reviewImagePaths ?: null,
         ]);
 
         $product->categories()->sync($categoryIds);
@@ -403,6 +449,7 @@ class ProductController extends Controller
                 if (empty($variantData['name'])) continue;
                 $vPrice = !empty($variantData['price']) ? $variantData['price'] : $request->price;
                 $vSalePrice = !empty($variantData['sale_price']) ? $variantData['sale_price'] : null;
+                $vCostPrice = !empty($variantData['cost_price']) ? $variantData['cost_price'] : ($request->filled('cost_price') ? $request->cost_price : null);
                 $vQty = isset($variantData['stock_quantity']) && $variantData['stock_quantity'] !== '' ? (int) $variantData['stock_quantity'] : 0;
 
                 if (!empty($variantData['id'])) {
@@ -414,6 +461,7 @@ class ProductController extends Controller
                             'sku' => $variantData['sku'] ?? null,
                             'price' => $vPrice,
                             'sale_price' => $vSalePrice,
+                            'cost_price' => $vCostPrice,
                             'stock_quantity' => $vQty,
                         ]);
                         $existingIds[] = $variant->id;
@@ -426,6 +474,7 @@ class ProductController extends Controller
                         'sku' => $variantData['sku'] ?? null,
                         'price' => $vPrice,
                         'sale_price' => $vSalePrice,
+                        'cost_price' => $vCostPrice,
                         'stock_quantity' => $vQty,
                         'is_active' => true,
                     ]);

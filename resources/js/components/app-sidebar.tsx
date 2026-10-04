@@ -12,6 +12,7 @@ import {
     Code2,
     Share2,
     Newspaper,
+    Settings,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -30,7 +31,7 @@ import {
 import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { t } = useAdminLanguage();
+    const { t, language } = useAdminLanguage();
 
     const mainNavItems: NavItem[] = [
         {
@@ -87,6 +88,11 @@ export function AppSidebar() {
             title: t.blogs,
             href: '/dashboard/blogs',
             icon: Newspaper,
+        },
+        {
+            title: language === 'en' ? 'Site Settings' : 'সাইট সেটিংস',
+            href: '/dashboard/settings/general',
+            icon: Settings,
         },
     ];
 

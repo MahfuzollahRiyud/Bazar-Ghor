@@ -1,6 +1,6 @@
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { Check, Film, ImageIcon, Loader2, Plus, Search, Upload, X } from 'lucide-react';
+import { Check, Film, ImageIcon, Loader2, MessageSquareHeart, Plus, Search, Upload, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import MediaPickerModal, { MediaItem } from '@/components/dashboard/MediaPickerModal';
@@ -21,6 +21,7 @@ interface Variant {
     options: VariantOption[];
     price: string;
     sale_price: string;
+    cost_price?: string;
     stock_quantity: string;
     sku: string;
     is_active: boolean;
@@ -36,6 +37,7 @@ interface ProductData {
     sku: string;
     price: number;
     sale_price?: number | null;
+    cost_price?: number | null;
     stock_quantity: number;
     video_url?: string | null;
     has_variants: boolean;
@@ -43,6 +45,7 @@ interface ProductData {
     is_active: boolean;
     thumbnail_url?: string | null;
     images: { path: string; url: string }[];
+    review_images?: { path: string; url: string }[];
     variants: Variant[];
 }
 
@@ -62,6 +65,7 @@ export default function ProductEdit({ product, categories }: Props) {
     const { t, language } = useAdminLanguage();
     const thumbnailRef = useRef<HTMLInputElement>(null);
     const imagesRef = useRef<HTMLInputElement>(null);
+    const reviewImagesRef = useRef<HTMLInputElement>(null);
 
     const [form, setForm] = useState({
         name: product.name,
@@ -71,6 +75,7 @@ export default function ProductEdit({ product, categories }: Props) {
         sku: product.sku ?? '',
         price: String(product.price),
         sale_price: product.sale_price ? String(product.sale_price) : '',
+        cost_price: product.cost_price ? String(product.cost_price) : '',
         stock_quantity: String(product.stock_quantity),
         video_url: product.video_url ?? '',
         has_variants: product.has_variants,
@@ -108,8 +113,10 @@ export default function ProductEdit({ product, categories }: Props) {
     const [mediaThumbnailPath, setMediaThumbnailPath] = useState<string | null>(null);
     const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(product.thumbnail_url ?? null);
     const [newGalleryItems, setNewGalleryItems] = useState<NewGalleryItem[]>([]);
+    const [existingReviewImages, setExistingReviewImages] = useState<{ path: string; url: string }[]>(product.review_images ?? []);
+    const [newReviewItems, setNewReviewItems] = useState<NewGalleryItem[]>([]);
     const [pickerOpen, setPickerOpen] = useState(false);
-    const [pickerTarget, setPickerTarget] = useState<'thumbnail' | 'gallery'>('thumbnail');
+    const [pickerTarget, setPickerTarget] = useState<'thumbnail' | 'gallery' | 'reviews'>('thumbnail');
 
     const [variants, setVariants] = useState<Variant[]>(
         product.variants.map((v) => ({
@@ -118,6 +125,7 @@ export default function ProductEdit({ product, categories }: Props) {
             options: v.options ?? [{ name: 'Color', value: '' }],
             price: String(v.price),
             sale_price: v.sale_price ? String(v.sale_price) : '',
+            cost_price: v.cost_price ? String(v.cost_price) : '',
             stock_quantity: String(v.stock_quantity),
             sku: v.sku ?? '',
             is_active: v.is_active,
@@ -154,6 +162,24 @@ export default function ProductEdit({ product, categories }: Props) {
         setNewGalleryItems((prev) => prev.filter((item) => item.id !== id));
     };
 
+    const handleReviewImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? []);
+        const items: NewGalleryItem[] = files.map((f) => ({
+            id: Math.random().toString(36).substring(2, 9),
+            previewUrl: URL.createObjectURL(f),
+            file: f,
+        }));
+        setNewReviewItems((prev) => [...prev, ...items]);
+    };
+
+    const removeExistingReviewImage = (path: string) => {
+        setExistingReviewImages((prev) => prev.filter((img) => img.path !== path));
+    };
+
+    const removeNewReviewItem = (id: string) => {
+        setNewReviewItems((prev) => prev.filter((item) => item.id !== id));
+    };
+
     const handleMediaSelect = (selected: MediaItem[]) => {
         if (!selected || selected.length === 0) return;
 
@@ -162,7 +188,7 @@ export default function ProductEdit({ product, categories }: Props) {
             setNewThumbnail(null);
             setMediaThumbnailPath(first.file_path);
             setThumbnailPreview(first.url);
-        } else {
+        } else if (pickerTarget === 'gallery') {
             const newItems: NewGalleryItem[] = selected.map((item) => ({
                 id: Math.random().toString(36).substring(2, 9),
                 previewUrl: item.url,
@@ -173,6 +199,18 @@ export default function ProductEdit({ product, categories }: Props) {
                 language === 'bn'
                     ? `${selected.length}টি ছবি গ্যালারিতে যোগ করা হয়েছে!`
                     : `${selected.length} image(s) added to gallery!`
+            );
+        } else if (pickerTarget === 'reviews') {
+            const newItems: NewGalleryItem[] = selected.map((item) => ({
+                id: Math.random().toString(36).substring(2, 9),
+                previewUrl: item.url,
+                mediaPath: item.file_path,
+            }));
+            setNewReviewItems((prev) => [...prev, ...newItems]);
+            toast.success(
+                language === 'bn'
+                    ? `${selected.length}টি রিভিউ স্ক্রিনশট যোগ করা হয়েছে!`
+                    : `${selected.length} review screenshot(s) added!`
             );
         }
         setPickerOpen(false);
@@ -199,6 +237,7 @@ export default function ProductEdit({ product, categories }: Props) {
         if (form.sku.trim()) data.append('sku', form.sku.trim());
         data.append('price', String(form.price));
         if (form.sale_price) data.append('sale_price', String(form.sale_price));
+        if (form.cost_price) data.append('cost_price', String(form.cost_price));
         data.append('stock_quantity', String(form.has_variants ? 0 : form.stock_quantity || 0));
         if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
         data.append('has_variants', form.has_variants ? '1' : '0');
@@ -218,6 +257,18 @@ export default function ProductEdit({ product, categories }: Props) {
                 data.append('media_image_paths[]', item.mediaPath);
             }
         });
+
+        existingReviewImages.forEach((img) => {
+            data.append('existing_review_images[]', img.path);
+        });
+
+        newReviewItems.forEach((item) => {
+            if (item.file) {
+                data.append('review_image_files[]', item.file);
+            } else if (item.mediaPath) {
+                data.append('media_review_image_paths[]', item.mediaPath);
+            }
+        });
         data.append('_method', 'POST');
 
         if (form.has_variants) {
@@ -226,6 +277,7 @@ export default function ProductEdit({ product, categories }: Props) {
                 data.append(`variants[${i}][name]`, v.name);
                 data.append(`variants[${i}][price]`, v.price || String(form.price));
                 if (v.sale_price) data.append(`variants[${i}][sale_price]`, v.sale_price);
+                if (v.cost_price) data.append(`variants[${i}][cost_price]`, v.cost_price);
                 data.append(`variants[${i}][stock_quantity]`, v.stock_quantity || '0');
                 if (v.sku) data.append(`variants[${i}][sku]`, v.sku);
                 v.options.forEach((o, oi) => {
@@ -457,7 +509,7 @@ export default function ProductEdit({ product, categories }: Props) {
                                 <h2 className="mb-4 font-bold text-gray-800">
                                     {language === 'bn' ? 'মূল্য ও স্টক' : 'Pricing & Inventory'}
                                 </h2>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     {[
                                         { name: 'price', label: `${t.regularPrice} (৳) *`, placeholder: '0' },
                                         {
@@ -465,6 +517,12 @@ export default function ProductEdit({ product, categories }: Props) {
                                             label: `${t.salePrice} (৳)`,
                                             placeholder: language === 'bn' ? 'ছাড়ের দাম' : 'Discount price',
                                         },
+                                        {
+                                            name: 'cost_price',
+                                            label: language === 'bn' ? 'কেনা দাম / হোলসেল প্রাইস (৳) [এডমিন]' : 'Cost / Wholesale Price (৳) [Admin]',
+                                            placeholder: '0',
+                                        },
+                                        { name: 'sku', label: `${t.sku} (${language === 'bn' ? 'ঐচ্ছিক' : 'Optional'})`, placeholder: 'PRD-001' },
                                         ...(!form.has_variants
                                             ? [
                                                   {
@@ -474,9 +532,8 @@ export default function ProductEdit({ product, categories }: Props) {
                                                   },
                                               ]
                                             : []),
-                                        { name: 'sku', label: t.sku, placeholder: 'PRD-001' },
                                     ].map((f) => (
-                                        <div key={f.name}>
+                                        <div key={f.name} className={f.name === 'stock_quantity' ? 'sm:col-span-2' : ''}>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 {f.label}
                                             </label>
@@ -485,7 +542,9 @@ export default function ProductEdit({ product, categories }: Props) {
                                                 value={(form as any)[f.name]}
                                                 onChange={handleChange}
                                                 type={f.name === 'sku' ? 'text' : 'number'}
-                                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                                className={`w-full rounded-xl border px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none ${
+                                                    f.name === 'cost_price' ? 'border-gray-200 bg-amber-50/20' : 'border-gray-200'
+                                                }`}
                                                 placeholder={f.placeholder}
                                             />
                                             {errors[f.name] && (
@@ -579,7 +638,7 @@ export default function ProductEdit({ product, categories }: Props) {
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <div className="grid grid-cols-3 gap-2">
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                                     <div>
                                                         <label className="text-xs text-gray-500">{t.price} *</label>
                                                         <input
@@ -598,6 +657,19 @@ export default function ProductEdit({ product, categories }: Props) {
                                                                 updateVariant(vi, 'sale_price', e.target.value)
                                                             }
                                                             className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none bg-white"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-xs text-amber-700 font-medium">
+                                                            {language === 'bn' ? 'কেনা দাম' : 'Cost'}
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={variant.cost_price ?? ''}
+                                                            onChange={(e) =>
+                                                                updateVariant(vi, 'cost_price', e.target.value)
+                                                            }
+                                                            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-xs focus:outline-none bg-amber-50/30"
                                                         />
                                                     </div>
                                                     <div>
@@ -730,6 +802,94 @@ export default function ProductEdit({ product, categories }: Props) {
                                 </button>
                             </div>
 
+                            {/* Customer Review Screenshots */}
+                            <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <MessageSquareHeart size={18} className="text-[#2d6a27]" />
+                                        {language === 'bn' ? 'কাস্টমার রিভিউ স্ক্রিনশট' : 'Review Screenshots'}
+                                    </h2>
+                                    <span className="text-[11px] font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                        {language === 'bn' ? 'ঐচ্ছিক' : 'Optional'}
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
+                                    {language === 'bn'
+                                        ? 'গ্রাহকদের সোশ্যাল মিডিয়া রিভিউ, চ্যাট বা পার্সেল পাওয়ার স্ক্রিনশট যোগ করুন। সিঙ্গেল প্রোডাক্ট পেজে ভিডিওর ঠিক উপরে সুন্দর স্লাইডার আকারে দেখাবে।'
+                                        : 'Add customer feedback / chat screenshots. Displayed as a smooth slider above video on product single page.'}
+                                </p>
+
+                                <input
+                                    type="file"
+                                    ref={reviewImagesRef}
+                                    onChange={handleReviewImages}
+                                    multiple
+                                    accept="image/*"
+                                    className="hidden"
+                                />
+
+                                {(existingReviewImages.length > 0 || newReviewItems.length > 0) && (
+                                    <div className="grid grid-cols-3 gap-2 mb-3">
+                                        {existingReviewImages.map((img, i) => (
+                                            <div key={`ex-${i}`} className="relative group">
+                                                <img
+                                                    src={img.url}
+                                                    className="w-full rounded-lg object-cover aspect-square border border-emerald-200 shadow-2xs"
+                                                    alt="Review screenshot"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeExistingReviewImage(img.path)}
+                                                    className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600 transition shadow-xs cursor-pointer"
+                                                    title={t.remove}
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        {newReviewItems.map((item) => (
+                                            <div key={item.id} className="relative group">
+                                                <img
+                                                    src={item.previewUrl}
+                                                    className="w-full rounded-lg object-cover aspect-square border-2 border-[#2d6a27] shadow-2xs"
+                                                    alt="New review screenshot"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeNewReviewItem(item.id)}
+                                                    className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600 transition shadow-xs cursor-pointer"
+                                                    title={t.remove}
+                                                >
+                                                    <X size={12} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPickerTarget('reviews');
+                                            setPickerOpen(true);
+                                        }}
+                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition shadow-2xs cursor-pointer"
+                                    >
+                                        <ImageIcon size={14} className="text-[#2d6a27]" />
+                                        <span>{language === 'bn' ? 'মিডিয়া লাইব্রেরি' : 'Media Library'}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => reviewImagesRef.current?.click()}
+                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#2d6a27]/40 bg-green-50/40 py-2.5 text-xs font-bold text-[#2d6a27] hover:bg-green-100/60 transition shadow-2xs cursor-pointer"
+                                    >
+                                        <Upload size={14} />
+                                        <span>{language === 'bn' ? 'সরাসরি আপলোড' : 'Direct Upload'}</span>
+                                    </button>
+                                </div>
+                            </div>
+
                             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-3">
                                 <h2 className="font-bold text-gray-800">
                                     {language === 'bn' ? 'স্ট্যাটাস ও সেটিংস' : 'Status & Visibility'}
@@ -780,11 +940,13 @@ export default function ProductEdit({ product, categories }: Props) {
                 isOpen={pickerOpen}
                 onClose={() => setPickerOpen(false)}
                 onSelect={handleMediaSelect}
-                multiple={pickerTarget === 'gallery'}
+                multiple={pickerTarget !== 'thumbnail'}
                 title={
                     pickerTarget === 'thumbnail'
                         ? (language === 'bn' ? 'মূল ছবি নির্বাচন করুন' : 'Select Thumbnail Image')
-                        : (language === 'bn' ? 'অতিরিক্ত ছবি নির্বাচন করুন' : 'Select Gallery Images')
+                        : pickerTarget === 'reviews'
+                            ? (language === 'bn' ? 'রিভিউ স্ক্রিনশট নির্বাচন করুন' : 'Select Review Screenshots')
+                            : (language === 'bn' ? 'অতিরিক্ত ছবি নির্বাচন করুন' : 'Select Gallery Images')
                 }
             />
         </>

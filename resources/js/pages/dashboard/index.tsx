@@ -1,5 +1,6 @@
-import { Head, Link } from '@inertiajs/react';
-import { Package, ShoppingBag, ShoppingCart, Tag, TrendingUp, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { Package, ShoppingBag, ShoppingCart, Tag, TrendingUp, Users, DollarSign, Wallet, Megaphone, Edit3, Check, X, HelpCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 
 interface Stats {
@@ -8,6 +9,10 @@ interface Stats {
     confirmed_orders: number;
     delivered_orders: number;
     total_revenue: number;
+    total_cogs: number;
+    gross_profit: number;
+    marketing_cost: number;
+    net_profit: number;
     total_products: number;
     active_products: number;
     total_categories: number;
@@ -43,6 +48,23 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function DashboardIndex({ stats, recentOrders }: Props) {
     const { t, language } = useAdminLanguage();
+    const [isEditingMarketing, setIsEditingMarketing] = useState(false);
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        marketing_cost: stats.marketing_cost || 0,
+    });
+
+    const handleUpdateMarketingCost = (e: React.FormEvent) => {
+        e.preventDefault();
+        post('/dashboard/settings/marketing-cost', {
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsEditingMarketing(false);
+            },
+        });
+    };
+
+    const isProfitPositive = (stats.net_profit ?? 0) >= 0;
 
     return (
         <>
@@ -54,6 +76,151 @@ export default function DashboardIndex({ stats, recentOrders }: Props) {
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{t.dashboard}</h1>
                         <p className="text-gray-500 text-xs mt-0.5">Bazar Ghor Admin Management Portal</p>
+                    </div>
+                </div>
+
+                {/* Profit & Financial Analytics Banner */}
+                <div className="rounded-2xl bg-gradient-to-br from-emerald-900 via-gray-900 to-gray-950 p-6 text-white shadow-lg border border-emerald-800/30">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 font-bold text-xs">
+                                    ৳
+                                </span>
+                                <h2 className="text-lg font-bold text-white tracking-wide">
+                                    {language === 'en' ? 'Financial & Profit Analytics' : 'আর্থিক হিসাব ও নিট লাভ এনালাইটিক্স'}
+                                </h2>
+                            </div>
+                            <p className="text-xs text-emerald-200/70 mt-1">
+                                {language === 'en'
+                                    ? 'Calculated based on delivered orders, product wholesale cost (COGS), and marketing expense.'
+                                    : 'ডেলিভারি সম্পন্ন হওয়া অর্ডার, পণ্যের পাইকারি খরচ (COGS) এবং মার্কেটিং ব্যয়ের ভিত্তিতে প্রস্তুতকৃত।'}
+                            </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setData('marketing_cost', stats.marketing_cost || 0);
+                                    setIsEditingMarketing(!isEditingMarketing);
+                                }}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-emerald-100 transition border border-white/10"
+                            >
+                                <Edit3 size={13} />
+                                {language === 'en' ? 'Set Marketing Cost' : 'মার্কেটিং খরচ আপডেট'}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Marketing Cost Edit Form (if toggled) */}
+                    {isEditingMarketing && (
+                        <form
+                            onSubmit={handleUpdateMarketingCost}
+                            className="mt-4 p-4 rounded-xl bg-black/40 border border-emerald-500/30 flex flex-wrap items-center gap-3 animate-in fade-in duration-200"
+                        >
+                            <div className="flex-1 min-w-[200px]">
+                                <label className="block text-xs font-medium text-emerald-200 mb-1">
+                                    {language === 'en' ? 'Total Marketing / Ad Spend (BDT)' : 'মোট মার্কেটিং বা বিজ্ঞাপন খরচ (টাকা)'}
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">৳</span>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        min="0"
+                                        value={data.marketing_cost}
+                                        onChange={(e) => setData('marketing_cost', parseFloat(e.target.value) || 0)}
+                                        className="w-full bg-gray-900 border border-emerald-500/50 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                        placeholder="0.00"
+                                        required
+                                    />
+                                </div>
+                                {errors.marketing_cost && (
+                                    <p className="text-xs text-red-400 mt-1">{errors.marketing_cost}</p>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 pt-5">
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition disabled:opacity-50"
+                                >
+                                    {processing ? (language === 'en' ? 'Saving...' : 'সেভ হচ্ছে...') : (language === 'en' ? 'Save Cost' : 'খরচ সেভ করুন')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        reset();
+                                        setIsEditingMarketing(false);
+                                    }}
+                                    className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-medium transition"
+                                >
+                                    {language === 'en' ? 'Cancel' : 'বাতিল'}
+                                </button>
+                            </div>
+                        </form>
+                    )}
+
+                    {/* Financial Metric Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
+                        {/* Delivered Revenue */}
+                        <div className="rounded-xl bg-white/5 p-4 border border-white/5">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
+                                {language === 'en' ? 'Delivered Revenue' : 'ডেলিভারি রাজস্ব'}
+                            </span>
+                            <p className="text-2xl font-black text-emerald-400 mt-1">
+                                ৳{Number(stats.total_revenue || 0).toLocaleString()}
+                            </p>
+                            <span className="text-[11px] text-gray-400 mt-1 block">
+                                {stats.delivered_orders} {language === 'en' ? 'delivered orders' : 'টি সফল ডেলিভারি'}
+                            </span>
+                        </div>
+
+                        {/* Cost of Goods Sold */}
+                        <div className="rounded-xl bg-white/5 p-4 border border-white/5">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
+                                {language === 'en' ? 'Product Cost (COGS)' : 'পণ্যের ক্রয়/পাইকারি খরচ'}
+                            </span>
+                            <p className="text-2xl font-black text-amber-300 mt-1">
+                                ৳{Number(stats.total_cogs || 0).toLocaleString()}
+                            </p>
+                            <span className="text-[11px] text-gray-400 mt-1 block">
+                                {language === 'en' ? 'Based on product cost price' : 'পণ্যের কস্ট প্রাইস থেকে'}
+                            </span>
+                        </div>
+
+                        {/* Marketing Spend */}
+                        <div className="rounded-xl bg-white/5 p-4 border border-white/5">
+                            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block">
+                                {language === 'en' ? 'Marketing Cost' : 'মার্কেটিং খরচ'}
+                            </span>
+                            <p className="text-2xl font-black text-blue-300 mt-1">
+                                ৳{Number(stats.marketing_cost || 0).toLocaleString()}
+                            </p>
+                            <span className="text-[11px] text-gray-400 mt-1 block">
+                                {language === 'en' ? 'Ad campaigns & promotion' : 'বিজ্ঞাপন ও প্রচারণা'}
+                            </span>
+                        </div>
+
+                        {/* Net Profit */}
+                        <div className={`rounded-xl p-4 border ${isProfitPositive ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                            <div className="flex items-center justify-between">
+                                <span className={`text-xs font-bold uppercase tracking-wider block ${isProfitPositive ? 'text-emerald-300' : 'text-red-300'}`}>
+                                    {language === 'en' ? 'Net Profit' : 'চূড়ান্ত নিট লাভ'}
+                                </span>
+                                {isProfitPositive ? (
+                                    <ArrowUpRight size={16} className="text-emerald-400" />
+                                ) : (
+                                    <ArrowDownRight size={16} className="text-red-400" />
+                                )}
+                            </div>
+                            <p className={`text-2xl font-black mt-1 ${isProfitPositive ? 'text-emerald-300' : 'text-red-300'}`}>
+                                ৳{Number(stats.net_profit || 0).toLocaleString()}
+                            </p>
+                            <span className="text-[11px] text-gray-400 mt-1 block">
+                                {language === 'en' ? `Gross: ৳${Number(stats.gross_profit || 0).toLocaleString()}` : `গ্রস লাভ: ৳${Number(stats.gross_profit || 0).toLocaleString()}`}
+                            </span>
+                        </div>
                     </div>
                 </div>
 

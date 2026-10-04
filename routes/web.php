@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Route;
 // ─── Storefront Routes ────────────────────────────────────────────────────────
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/shop', [ShopController::class, 'index'])->name('shop');
+Route::get('/search-suggestions', [ShopController::class, 'suggestions'])->name('search.suggestions');
 Route::get('/product/{slug}', [ProductController::class, 'show'])->name('product.show');
 Route::get('/blog', [\App\Http\Controllers\BlogController::class, 'index'])->name('blog.index');
 Route::get('/blog/{slug}', [\App\Http\Controllers\BlogController::class, 'show'])->name('blog.show');
@@ -124,6 +125,11 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::post('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'update'])->name('blogs.update');
     Route::delete('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('/blogs/{blog}/toggle', [\App\Http\Controllers\Dashboard\BlogController::class, 'toggle'])->name('blogs.toggle');
+
+    // Site Settings (Title, Logo, Favicon & Marketing Cost)
+    Route::get('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'index'])->name('settings.general');
+    Route::post('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/marketing-cost', [DashboardController::class, 'updateMarketingCost'])->name('settings.marketing-cost');
 });
 
 require __DIR__ . '/settings.php';

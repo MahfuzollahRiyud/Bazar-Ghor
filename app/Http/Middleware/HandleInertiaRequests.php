@@ -43,6 +43,20 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'socialLinks' => fn () => \App\Models\SocialLink::getActiveCached(),
+            'siteSettings' => fn () => [
+                'site_title' => \App\Models\SiteSetting::get('site_title', 'Bazar Ghor'),
+                'site_tagline' => \App\Models\SiteSetting::get('site_tagline', 'স্মার্ট গ্যাজেট স্টোর'),
+                'site_logo_url' => \App\Models\SiteSetting::get('site_logo')
+                    ? (str_starts_with(\App\Models\SiteSetting::get('site_logo'), 'http')
+                        ? \App\Models\SiteSetting::get('site_logo')
+                        : asset('storage/' . \App\Models\SiteSetting::get('site_logo')))
+                    : '/images/logo.png',
+                'site_favicon_url' => \App\Models\SiteSetting::get('site_favicon')
+                    ? (str_starts_with(\App\Models\SiteSetting::get('site_favicon'), 'http')
+                        ? \App\Models\SiteSetting::get('site_favicon')
+                        : asset('storage/' . \App\Models\SiteSetting::get('site_favicon')))
+                    : '/favicon.ico',
+            ],
         ];
     }
 }

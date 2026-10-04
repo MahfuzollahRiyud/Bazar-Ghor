@@ -14,6 +14,7 @@ class ProductVariant extends Model
         'sku',
         'price',
         'sale_price',
+        'cost_price',
         'stock_quantity',
         'image',
         'is_active',
@@ -23,6 +24,7 @@ class ProductVariant extends Model
         'options' => 'array',
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 

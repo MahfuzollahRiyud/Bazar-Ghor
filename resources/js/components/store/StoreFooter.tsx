@@ -18,9 +18,18 @@ interface SocialLinkItem {
 
 export default function StoreFooter() {
     const { t, language } = useLanguage();
-    const { props } = usePage<{ socialLinks?: SocialLinkItem[] }>();
+    const { props } = usePage<{
+        socialLinks?: SocialLinkItem[];
+        siteSettings?: {
+            site_title?: string;
+            site_tagline?: string;
+            site_logo_url?: string;
+            site_favicon_url?: string;
+        };
+    }>();
     const socialLinks = Array.isArray(props.socialLinks) ? props.socialLinks : [];
     const footerSocialLinks = socialLinks.filter((s) => s && s.is_active && s.show_in_footer);
+    const siteSettings = props.siteSettings;
 
     const quickLinks = [
         { label: t.home, href: '/' },
@@ -55,8 +64,8 @@ export default function StoreFooter() {
                     <div>
                         <div className="mb-4 inline-flex items-center rounded-xl bg-white p-1.5 shadow-sm">
                             <img
-                                src="/images/logo.png"
-                                alt="Bazar Ghor"
+                                src={siteSettings?.site_logo_url || '/images/logo.png'}
+                                alt={siteSettings?.site_title || 'Bazar Ghor'}
                                 className="h-12 w-auto object-contain rounded-lg"
                                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                             />

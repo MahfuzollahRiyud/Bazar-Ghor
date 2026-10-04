@@ -25,6 +25,7 @@ class ShopController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(fn($q) => $q->where('name', 'like', "%{$search}%")
+                ->orWhere('sku', 'like', "%{$search}%")
                 ->orWhere('short_description', 'like', "%{$search}%"));
         }
 
@@ -88,5 +89,34 @@ class ShopController extends Controller
                 'slug' => $product->category->slug,
             ] : null,
         ];
+    }
+
+    public function suggestions(Request $request)
+    {
+        $query = trim((string) $request->get('q', ''));
+        if (strlen($query) < 1) {
+            return response()->json([]);
+        }
+
+        $products = Product::where('is_active', true)
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('sku', 'like', "%{$query}%")
+                  ->orWhere('short_description', 'like', "%{$query}%");
+            })
+            ->take(8)
+            ->get();
+
+        return response()->json($products->map(fn($p) => [
+            'id' => $p->id,
+            'name' => $p->name,
+            'slug' => $p->slug,
+            'sku' => $p->sku,
+            'price' => $p->price,
+            'sale_price' => $p->sale_price,
+            'effective_price' => $p->effective_price,
+            'is_on_sale' => $p->is_on_sale,
+            'thumbnail_url' => $p->thumbnail_url,
+        ]));
     }
 }

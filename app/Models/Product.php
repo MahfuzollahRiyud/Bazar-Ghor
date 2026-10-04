@@ -20,8 +20,10 @@ class Product extends Model
         'sku',
         'price',
         'sale_price',
+        'cost_price',
         'thumbnail',
         'images',
+        'review_images',
         'video_url',
         'has_variants',
         'stock_quantity',
@@ -33,7 +35,9 @@ class Product extends Model
     protected $casts = [
         'price' => 'decimal:2',
         'sale_price' => 'decimal:2',
+        'cost_price' => 'decimal:2',
         'images' => 'array',
+        'review_images' => 'array',
         'has_variants' => 'boolean',
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
@@ -83,6 +87,21 @@ class Product extends Model
             }
         }
 
+        return $urls;
+    }
+
+    public function getReviewImageUrlsAttribute(): array
+    {
+        $urls = [];
+        if (is_array($this->review_images)) {
+            foreach ($this->review_images as $img) {
+                if (!$img) continue;
+                $url = str_starts_with($img, 'http') ? $img : asset('storage/' . $img);
+                if (!in_array($url, $urls)) {
+                    $urls[] = $url;
+                }
+            }
+        }
         return $urls;
     }
 

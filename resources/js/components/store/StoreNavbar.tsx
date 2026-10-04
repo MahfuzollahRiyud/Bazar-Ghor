@@ -1,8 +1,8 @@
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link, usePage } from '@inertiajs/react';
-import { Globe, LogIn, Menu, Phone, Search, ShoppingCart, User, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Globe, LogIn, Menu, Phone, Search, ShoppingCart, User, X, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import SocialIcon from '@/components/store/SocialIcon';
 
 interface SocialLinkItem {
@@ -18,20 +18,43 @@ interface SocialLinkItem {
     sort_order: number;
 }
 
+interface SuggestionItem {
+    id: number;
+    name: string;
+    slug: string;
+    sku?: string | null;
+    price: number;
+    sale_price?: number | null;
+    primary_image_url?: string | null;
+}
+
 export default function StoreNavbar() {
     const { totalItems } = useCart();
     const { language, toggleLanguage, t } = useLanguage();
     const { url, props } = usePage<{
         auth?: { user?: { id: number; name: string; email: string; role?: string } | null };
         socialLinks?: SocialLinkItem[];
+        siteSettings?: {
+            site_title?: string;
+            site_tagline?: string;
+            site_logo_url?: string;
+            site_favicon_url?: string;
+        };
     }>();
     const user = props.auth?.user;
     const socialLinks = Array.isArray(props.socialLinks) ? props.socialLinks : [];
     const headerSocialLinks = socialLinks.filter((s) => s && s.is_active && s.show_in_header);
+    const siteSettings = props.siteSettings;
 
     const [mobileOpen, setMobileOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
+    const desktopSearchRef = useRef<HTMLDivElement>(null);
+    const mobileSearchRef = useRef<HTMLDivElement>(null);
 
     const navLinks = [
         { label: t.home, href: '/' },
@@ -47,10 +70,53 @@ export default function StoreNavbar() {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
+    // Debounced search suggestions
+    useEffect(() => {
+        if (!searchQuery || searchQuery.trim().length < 2) {
+            setSuggestions([]);
+            setIsLoadingSuggestions(false);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            setIsLoadingSuggestions(true);
+            try {
+                const res = await fetch(`/search-suggestions?q=${encodeURIComponent(searchQuery.trim())}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setSuggestions(Array.isArray(data) ? data : []);
+                    setShowSuggestions(true);
+                }
+            } catch {
+                // Ignore network error
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        }, 220);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Click outside to close suggestions
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            const target = e.target as Node;
+            if (
+                desktopSearchRef.current && !desktopSearchRef.current.contains(target) &&
+                mobileSearchRef.current && !mobileSearchRef.current.contains(target)
+            ) {
+                setShowSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            window.location.href = `/shop?search=${encodeURIComponent(searchQuery)}`;
+            setShowSuggestions(false);
+            window.location.href = `/shop?search=${encodeURIComponent(searchQuery.trim())}`;
         }
     };
 
@@ -132,8 +198,8 @@ export default function StoreNavbar() {
                     {/* Logo & Brand */}
                     <Link href="/" className="flex items-center gap-2.5 group shrink-0">
                         <img
-                            src="/images/logo.png"
-                            alt="Bazar Ghor"
+                            src={siteSettings?.site_logo_url || '/images/logo.png'}
+                            alt={siteSettings?.site_title || 'Bazar Ghor'}
                             className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg object-contain transition-transform group-hover:scale-105"
                             onError={(e) => {
                                 const target = e.currentTarget;
@@ -144,33 +210,110 @@ export default function StoreNavbar() {
                         />
                         <div className="flex flex-col">
                             <div className="flex items-center text-xl font-bold tracking-tight">
-                                <span className="text-[#2d6a27]">Bazar</span>
-                                <span className="ml-1 text-[#8b4513]">Ghor</span>
+                                <span className="text-[#2d6a27]">{siteSettings?.site_title ? siteSettings.site_title.split(' ')[0] : 'Bazar'}</span>
+                                <span className="ml-1 text-[#8b4513]">{siteSettings?.site_title ? siteSettings.site_title.split(' ').slice(1).join(' ') || 'Ghor' : 'Ghor'}</span>
                             </div>
                             <span className="text-[10px] text-gray-500 font-medium tracking-wider -mt-1 uppercase">
-                                {language === 'en' ? 'Smart Gadgets' : 'গ্যাজেট স্টোর'}
+                                {siteSettings?.site_tagline || (language === 'en' ? 'Smart Gadgets' : 'গ্যাজেট স্টোর')}
                             </span>
                         </div>
                     </Link>
 
-                    {/* Desktop Search Bar (Always Open) */}
-                    <form onSubmit={handleSearch} className="hidden md:flex items-center relative w-56 lg:w-72 xl:w-84 mx-4">
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder={t.searchPlaceholder}
-                            className="w-full rounded-full border border-gray-200 bg-gray-50/90 pl-3.5 pr-9 py-1.5 text-xs lg:text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:bg-white focus:ring-2 focus:ring-[#2d6a27]/20 focus:outline-none transition-all shadow-2xs"
-                        />
-                        <button
-                            type="submit"
-                            className="absolute right-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2d6a27] text-white hover:bg-[#23531e] transition-colors"
-                            aria-label={t.search}
-                            title={t.search}
-                        >
-                            <Search size={13} />
-                        </button>
-                    </form>
+                    {/* Desktop Search Bar (Always Open) with Suggestions Dropdown */}
+                    <div ref={desktopSearchRef} className="hidden md:block relative w-56 lg:w-72 xl:w-84 mx-4">
+                        <form onSubmit={handleSearch} className="relative w-full">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onFocus={() => {
+                                    if (suggestions.length > 0) setShowSuggestions(true);
+                                }}
+                                placeholder={t.searchPlaceholder}
+                                className="w-full rounded-full border border-gray-200 bg-gray-50/90 pl-3.5 pr-9 py-1.5 text-xs lg:text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:bg-white focus:ring-2 focus:ring-[#2d6a27]/20 focus:outline-none transition-all shadow-2xs"
+                            />
+                            <button
+                                type="submit"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-[#2d6a27] text-white hover:bg-[#23531e] transition-colors"
+                                aria-label={t.search}
+                                title={t.search}
+                            >
+                                {isLoadingSuggestions ? (
+                                    <Loader2 size={13} className="animate-spin text-white" />
+                                ) : (
+                                    <Search size={13} />
+                                )}
+                            </button>
+                        </form>
+
+                        {/* Desktop Suggestions Popup */}
+                        {showSuggestions && searchQuery.trim().length >= 2 && (
+                            <div className="absolute left-0 right-0 top-full mt-2 z-50 rounded-2xl bg-white shadow-2xl border border-gray-200/80 overflow-hidden divide-y divide-gray-100 max-h-96 overflow-y-auto animate-in fade-in-50 zoom-in-95 duration-150">
+                                {isLoadingSuggestions ? (
+                                    <div className="py-5 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                                        <Loader2 size={14} className="animate-spin text-[#2d6a27]" />
+                                        <span>{language === 'en' ? 'Searching products & SKU...' : 'পণ্য ও SKU খোঁজা হচ্ছে...'}</span>
+                                    </div>
+                                ) : suggestions.length > 0 ? (
+                                    <>
+                                        <div className="px-3 py-1.5 bg-gray-50/90 text-[11px] font-bold text-gray-500 uppercase tracking-wider flex justify-between items-center">
+                                            <span>{language === 'en' ? 'Products & SKU' : 'পণ্য ও SKU কোড'}</span>
+                                            <span className="text-[#2d6a27] font-semibold">{suggestions.length} {language === 'en' ? 'found' : 'টি পাওয়া গেছে'}</span>
+                                        </div>
+                                        {suggestions.map((item) => (
+                                            <Link
+                                                key={item.id}
+                                                href={`/product/${item.slug}`}
+                                                onClick={() => setShowSuggestions(false)}
+                                                className="flex items-center gap-3 p-2.5 hover:bg-green-50/70 transition group"
+                                            >
+                                                <div className="h-11 w-11 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
+                                                    {item.primary_image_url ? (
+                                                        <img src={item.primary_image_url} alt={item.name} className="h-full w-full object-cover group-hover:scale-105 transition duration-200" />
+                                                    ) : (
+                                                        <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">📷</div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-xs font-semibold text-gray-800 group-hover:text-[#2d6a27] truncate">
+                                                        {item.name}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        {item.sku && (
+                                                            <span className="text-[10px] font-mono font-medium bg-emerald-50 text-[#2d6a27] border border-emerald-200/60 px-1.5 py-0.2 rounded">
+                                                                SKU: {item.sku}
+                                                            </span>
+                                                        )}
+                                                        <div className="flex items-center gap-1.5 text-xs">
+                                                            {item.sale_price ? (
+                                                                <>
+                                                                    <span className="font-bold text-[#2d6a27]">৳{Number(item.sale_price).toLocaleString()}</span>
+                                                                    <span className="text-[10px] text-gray-400 line-through">৳{Number(item.price).toLocaleString()}</span>
+                                                                </>
+                                                            ) : (
+                                                                <span className="font-bold text-gray-900">৳{Number(item.price).toLocaleString()}</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                        <button
+                                            type="button"
+                                            onClick={(e) => handleSearch(e)}
+                                            className="w-full p-2.5 text-center text-xs font-bold text-[#2d6a27] hover:bg-green-50 transition border-t border-gray-100 block"
+                                        >
+                                            {language === 'en' ? `View all results for "${searchQuery}" →` : `"${searchQuery}" এর সব ফলাফল দেখুন →`}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="py-6 text-center text-xs text-gray-400">
+                                        {language === 'en' ? 'No products or SKU matched your search.' : 'আপনার সার্চের সাথে কোনো পণ্য বা SKU মেলেনি।'}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Desktop Nav Links */}
                     <div className="hidden items-center gap-5 lg:gap-7 md:flex">
@@ -234,13 +377,16 @@ export default function StoreNavbar() {
                     </div>
                 </div>
 
-                {/* Mobile Dedicated Search Row (Full Width Row on Mobile) */}
-                <div className="block md:hidden px-4 pt-1.5 pb-1">
+                {/* Mobile Dedicated Search Row (Full Width Row on Mobile) with Suggestions */}
+                <div ref={mobileSearchRef} className="block md:hidden px-4 pt-1.5 pb-1 relative">
                     <form onSubmit={handleSearch} className="relative w-full">
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => {
+                                if (suggestions.length > 0) setShowSuggestions(true);
+                            }}
                             placeholder={t.searchPlaceholder}
                             className="w-full rounded-full border border-gray-200 bg-gray-50 pl-4 pr-10 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#2d6a27] focus:bg-white focus:ring-2 focus:ring-[#2d6a27]/20 focus:outline-none transition-all shadow-2xs"
                         />
@@ -249,9 +395,68 @@ export default function StoreNavbar() {
                             className="absolute right-1 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-[#2d6a27] text-white hover:bg-[#23531e] transition-colors"
                             aria-label={t.search}
                         >
-                            <Search size={12} />
+                            {isLoadingSuggestions ? (
+                                <Loader2 size={12} className="animate-spin text-white" />
+                            ) : (
+                                <Search size={12} />
+                            )}
                         </button>
                     </form>
+
+                    {/* Mobile Suggestions Popup */}
+                    {showSuggestions && searchQuery.trim().length >= 2 && (
+                        <div className="absolute left-4 right-4 top-full mt-1.5 z-50 rounded-2xl bg-white shadow-2xl border border-gray-200 overflow-hidden divide-y divide-gray-100 max-h-80 overflow-y-auto animate-in fade-in-50 duration-150">
+                            {isLoadingSuggestions ? (
+                                <div className="py-4 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
+                                    <Loader2 size={13} className="animate-spin text-[#2d6a27]" />
+                                    <span>{language === 'en' ? 'Searching...' : 'অনুসন্ধান চলছে...'}</span>
+                                </div>
+                            ) : suggestions.length > 0 ? (
+                                <>
+                                    {suggestions.map((item) => (
+                                        <Link
+                                            key={item.id}
+                                            href={`/product/${item.slug}`}
+                                            onClick={() => setShowSuggestions(false)}
+                                            className="flex items-center gap-3 p-2.5 hover:bg-green-50/70 transition"
+                                        >
+                                            <div className="h-10 w-10 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-100">
+                                                {item.primary_image_url ? (
+                                                    <img src={item.primary_image_url} alt={item.name} className="h-full w-full object-cover" />
+                                                ) : (
+                                                    <div className="h-full w-full flex items-center justify-center text-gray-400 text-xs">📷</div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs font-semibold text-gray-800 truncate">{item.name}</p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    {item.sku && (
+                                                        <span className="text-[9px] font-mono bg-emerald-50 text-[#2d6a27] px-1 rounded">
+                                                            SKU: {item.sku}
+                                                        </span>
+                                                    )}
+                                                    <span className="text-xs font-bold text-[#2d6a27]">
+                                                        ৳{Number(item.sale_price || item.price).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleSearch(e)}
+                                        className="w-full p-2.5 text-center text-xs font-bold text-[#2d6a27] hover:bg-green-50 transition border-t border-gray-100 block"
+                                    >
+                                        {language === 'en' ? `View all results →` : `সব ফলাফল দেখুন →`}
+                                    </button>
+                                </>
+                            ) : (
+                                <div className="py-5 text-center text-xs text-gray-400">
+                                    {language === 'en' ? 'No products found' : 'কোনো পণ্য পাওয়া যায়নি'}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Mobile Menu */}

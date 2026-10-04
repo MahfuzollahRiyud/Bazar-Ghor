@@ -3,8 +3,8 @@ import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatRichText } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Tag, Truck, Zap } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronLeft, ChevronRight, Maximize2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Star, Tag, Truck, X, Zap } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Variant {
@@ -31,6 +31,7 @@ interface Product {
     is_on_sale: boolean;
     thumbnail_url?: string | null;
     images?: string[];
+    review_image_urls?: string[];
     video_url?: string | null;
     has_variants: boolean;
     stock_quantity: number;
@@ -110,6 +111,16 @@ export default function ProductDetail({ product, related }: Props) {
     const [quantity, setQuantity] = useState(1);
     const [activeImage, setActiveImage] = useState(0);
     const [added, setAdded] = useState(false);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+    const reviewTrackRef = useRef<HTMLDivElement>(null);
+    const reviewImages = product.review_image_urls ?? [];
+
+    const scrollReviews = (dir: 'left' | 'right') => {
+        if (reviewTrackRef.current) {
+            const amount = dir === 'left' ? -320 : 320;
+            reviewTrackRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+        }
+    };
 
     const embedVideoUrl = getYouTubeEmbedUrl(product.video_url);
 
@@ -481,6 +492,154 @@ export default function ProductDetail({ product, related }: Props) {
                         </div>
                     </div>
                 </div>
+
+                {/* Customer Reviews & Feedback Screenshot Slider */}
+                {reviewImages.length > 0 && (
+                    <div className="mt-12 rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
+                        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-2xs">
+                                    <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
+                                </span>
+                                <div>
+                                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                        {language === 'bn' ? 'গ্রাহকদের রিভিউ ও ফিডব্যাক' : 'Customer Reviews & Feedback'}
+                                        <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-[#2d6a27]">
+                                            {language === 'bn' ? `${reviewImages.length}টি রিভিউ স্ক্রিনশট` : `${reviewImages.length} Proofs`}
+                                        </span>
+                                    </h2>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                        {language === 'bn'
+                                            ? 'আমাদের সম্মানিত ক্রেতাদের ফেসবুক, হোয়াটসঅ্যাপ চ্যাট ও পার্সেল রিসিভ রিভিউ'
+                                            : 'Real WhatsApp, Facebook chat proofs & buyer unboxing reviews'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Slider Navigation Arrows */}
+                            <div className="flex items-center gap-1.5 ml-auto">
+                                <button
+                                    type="button"
+                                    onClick={() => scrollReviews('left')}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-700 hover:bg-[#2d6a27] hover:text-white hover:border-[#2d6a27] transition shadow-2xs cursor-pointer active:scale-95"
+                                    title="Previous"
+                                    aria-label="Previous review"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => scrollReviews('right')}
+                                    className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-700 hover:bg-[#2d6a27] hover:text-white hover:border-[#2d6a27] transition shadow-2xs cursor-pointer active:scale-95"
+                                    title="Next"
+                                    aria-label="Next review"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Slider Track */}
+                        <div
+                            ref={reviewTrackRef}
+                            className="flex gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300"
+                            style={{ scrollbarWidth: 'thin' }}
+                        >
+                            {reviewImages.map((imgUrl, idx) => (
+                                <div
+                                    key={idx}
+                                    onClick={() => setLightboxIndex(idx)}
+                                    className="group relative flex-none w-64 sm:w-72 md:w-80 h-96 sm:h-[420px] snap-center rounded-xl overflow-hidden border border-gray-200 bg-gray-50/70 shadow-2xs hover:shadow-md hover:border-[#2d6a27]/50 transition-all duration-300 cursor-pointer flex items-center justify-center"
+                                >
+                                    <img
+                                        src={imgUrl}
+                                        alt={`Customer Review ${idx + 1}`}
+                                        className="w-full h-full object-contain p-1.5 transition-transform duration-300 group-hover:scale-[1.02]"
+                                        loading="lazy"
+                                    />
+                                    {/* Hover overlay hint */}
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1.5 p-4 text-center">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-md shadow-sm">
+                                            <Maximize2 size={18} />
+                                        </div>
+                                        <span className="text-xs font-semibold tracking-wide">
+                                            {language === 'bn' ? 'বড় করে পড়তে ক্লিক করুন' : 'Click to zoom review'}
+                                        </span>
+                                    </div>
+                                    {/* Badge counter */}
+                                    <div className="absolute top-2.5 right-2.5 rounded-full bg-black/60 backdrop-blur-sm px-2 py-0.5 text-[10px] font-semibold text-white">
+                                        #{idx + 1}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Lightbox Zoom Modal for Reviews */}
+                {lightboxIndex !== null && reviewImages[lightboxIndex] && (
+                    <div
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+                        onClick={() => setLightboxIndex(null)}
+                    >
+                        <div
+                            className="relative max-w-4xl max-h-[92vh] w-full flex flex-col items-center justify-center"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Close Button */}
+                            <button
+                                type="button"
+                                onClick={() => setLightboxIndex(null)}
+                                className="absolute -top-12 right-0 sm:top-2 sm:right-2 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 sm:bg-black/60 text-white hover:bg-white hover:text-black transition cursor-pointer"
+                                aria-label="Close"
+                            >
+                                <X size={20} />
+                            </button>
+
+                            {/* Main Enlarged Image */}
+                            <div className="relative rounded-2xl overflow-hidden bg-black/50 border border-white/10 max-h-[85vh] flex items-center justify-center">
+                                <img
+                                    src={reviewImages[lightboxIndex]}
+                                    alt={`Review ${lightboxIndex + 1}`}
+                                    className="max-h-[82vh] w-auto max-w-full object-contain rounded-lg"
+                                />
+                            </div>
+
+                            {/* Lightbox Navigation Buttons */}
+                            {reviewImages.length > 1 && (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setLightboxIndex((prev) => (prev! > 0 ? prev! - 1 : reviewImages.length - 1));
+                                        }}
+                                        className="absolute left-2 sm:-left-12 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white hover:bg-white hover:text-black transition cursor-pointer shadow-lg"
+                                        aria-label="Previous"
+                                    >
+                                        <ChevronLeft size={22} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setLightboxIndex((prev) => (prev! < reviewImages.length - 1 ? prev! + 1 : 0));
+                                        }}
+                                        className="absolute right-2 sm:-right-12 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white hover:bg-white hover:text-black transition cursor-pointer shadow-lg"
+                                        aria-label="Next"
+                                    >
+                                        <ChevronRight size={22} />
+                                    </button>
+                                </>
+                            )}
+
+                            {/* Counter */}
+                            <div className="mt-3 text-center text-xs font-medium text-white/80">
+                                {lightboxIndex + 1} / {reviewImages.length}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Video Preview */}
                 {embedVideoUrl && (

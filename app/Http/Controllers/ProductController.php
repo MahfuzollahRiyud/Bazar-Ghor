@@ -57,6 +57,7 @@ class ProductController extends Controller
                 'is_on_sale' => $product->is_on_sale,
                 'thumbnail_url' => $product->thumbnail_url,
                 'images' => collect($product->images ?? [])->map(fn($img) => str_starts_with($img, 'http') ? $img : asset('storage/' . $img)),
+                'review_image_urls' => $product->review_image_urls,
                 'video_url' => $product->video_url,
                 'has_variants' => $product->has_variants,
                 'stock_quantity' => $product->stock_quantity,
