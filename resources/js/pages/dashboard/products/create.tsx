@@ -546,68 +546,56 @@ export default function ProductCreate({ categories }: Props) {
                             <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
                                 <h2 className="mb-4 font-bold text-gray-800">{t.thumbnail}</h2>
                                 {thumbnailPreview ? (
-                                    <div className="relative mb-3">
-                                        <img
-                                            src={thumbnailPreview}
-                                            className="w-full rounded-xl object-cover aspect-square"
-                                            alt=""
-                                        />
+                                    <div className="space-y-3">
+                                        <div className="relative">
+                                            <img
+                                                src={thumbnailPreview}
+                                                className="w-full rounded-xl object-cover aspect-square border border-gray-100 shadow-2xs"
+                                                alt=""
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setThumbnail(null);
+                                                    setMediaThumbnailPath(null);
+                                                    setThumbnailPreview(null);
+                                                }}
+                                                className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 transition shadow-xs cursor-pointer"
+                                                title={t.remove}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={() => {
-                                                setThumbnail(null);
-                                                setMediaThumbnailPath(null);
-                                                setThumbnailPreview(null);
+                                                setPickerTarget('thumbnail');
+                                                setPickerOpen(true);
                                             }}
-                                            className="absolute right-2 top-2 rounded-full bg-red-500 p-1 text-white hover:bg-red-600 transition"
+                                            className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition shadow-2xs cursor-pointer"
                                         >
-                                            <X size={14} />
+                                            <ImageIcon size={14} className="text-[#2d6a27]" />
+                                            <span>{language === 'bn' ? 'ছবি পরিবর্তন করুন' : 'Change Image'}</span>
                                         </button>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2 mb-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => thumbnailRef.current?.click()}
-                                            className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 p-6 text-gray-400 hover:border-[#2d6a27] hover:text-[#2d6a27] transition"
-                                        >
-                                            <Upload size={24} className="mb-1" />
-                                            <span className="text-sm font-medium">
-                                                {language === 'bn' ? 'কম্পিউটার থেকে আপলোড' : 'Upload from Device'}
-                                            </span>
-                                            <span className="text-xs text-gray-400 mt-0.5">JPG, PNG, WEBP</span>
-                                        </button>
-                                    </div>
-                                )}
-                                <div className="flex gap-2">
                                     <button
                                         type="button"
                                         onClick={() => {
                                             setPickerTarget('thumbnail');
                                             setPickerOpen(true);
                                         }}
-                                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition"
+                                        className="flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/70 p-6 text-gray-500 hover:border-[#2d6a27] hover:bg-green-50/50 hover:text-[#2d6a27] transition cursor-pointer shadow-2xs"
                                     >
-                                        <ImageIcon size={14} className="text-[#2d6a27]" />
-                                        {t.chooseFromMedia}
+                                        <ImageIcon size={28} className="mb-2 text-[#2d6a27]" />
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {language === 'bn' ? 'মিডিয়া লাইব্রেরি থেকে ছবি নির্বাচন করুন' : 'Select Thumbnail (Media Library)'}
+                                        </span>
+                                        <span className="text-xs text-gray-400 mt-1">
+                                            {language === 'bn' ? 'ক্লিক করে মিডিয়া লাইব্রেরি থেকে পছন্দ বা আপলোড করুন' : 'Click to choose from library or upload'}
+                                        </span>
                                     </button>
-                                    {thumbnailPreview && (
-                                        <button
-                                            type="button"
-                                            onClick={() => thumbnailRef.current?.click()}
-                                            className="rounded-xl border border-gray-200 px-3 py-2 text-xs text-gray-600 hover:border-[#2d6a27] transition"
-                                        >
-                                            {t.change}
-                                        </button>
-                                    )}
-                                </div>
-                                <input
-                                    ref={thumbnailRef}
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleThumbnail}
-                                    className="hidden"
-                                />
+                                )}
                             </div>
 
                             {/* Additional Images */}
@@ -619,13 +607,14 @@ export default function ProductCreate({ categories }: Props) {
                                             <div key={item.id} className="relative">
                                                 <img
                                                     src={item.previewUrl}
-                                                    className="w-full rounded-lg object-cover aspect-square border border-gray-100"
+                                                    className="w-full rounded-lg object-cover aspect-square border border-gray-100 shadow-2xs"
                                                     alt=""
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => removeGalleryItem(item.id)}
-                                                    className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600 transition"
+                                                    className="absolute -right-1 -top-1 rounded-full bg-red-500 p-0.5 text-white hover:bg-red-600 transition shadow-xs cursor-pointer"
+                                                    title={t.remove}
                                                 >
                                                     <X size={12} />
                                                 </button>
@@ -633,35 +622,18 @@ export default function ProductCreate({ categories }: Props) {
                                         ))}
                                     </div>
                                 )}
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => imagesRef.current?.click()}
-                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-xs font-semibold text-gray-600 hover:border-[#2d6a27] hover:text-[#2d6a27] transition"
-                                    >
-                                        <Upload size={14} />
-                                        {t.upload}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setPickerTarget('gallery');
-                                            setPickerOpen(true);
-                                        }}
-                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-[#2d6a27]/20 bg-green-50/50 py-2.5 text-xs font-semibold text-[#2d6a27] hover:bg-green-100/50 transition"
-                                    >
-                                        <ImageIcon size={14} />
-                                        {t.media}
-                                    </button>
-                                </div>
-                                <input
-                                    ref={imagesRef}
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    onChange={handleImages}
-                                    className="hidden"
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPickerTarget('gallery');
+                                        setPickerOpen(true);
+                                    }}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#2d6a27]/30 bg-green-50/40 py-3 text-xs font-bold text-[#2d6a27] hover:bg-green-100/60 transition shadow-2xs cursor-pointer"
+                                >
+                                    <Plus size={16} />
+                                    <ImageIcon size={16} />
+                                    <span>{language === 'bn' ? 'মিডিয়া লাইব্রেরি থেকে ছবি যোগ করুন' : 'Add Images from Media Library'}</span>
+                                </button>
                             </div>
 
                             {/* Settings */}

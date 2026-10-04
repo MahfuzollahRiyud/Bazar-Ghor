@@ -458,43 +458,38 @@ export default function BlogCreate({ existingCategories }: Props) {
                                 </h3>
 
                                 {imagePreview ? (
-                                    <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-video">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Cover preview"
-                                            className="h-full w-full object-cover"
-                                        />
+                                    <div className="space-y-2">
+                                        <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50 aspect-video shadow-2xs">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Cover preview"
+                                                className="h-full w-full object-cover"
+                                            />
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setMediaPickerOpen(true)}
+                                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 py-2.5 text-xs font-semibold text-gray-700 hover:border-[#2d6a27] hover:bg-green-50 hover:text-[#2d6a27] transition shadow-2xs cursor-pointer"
+                                        >
+                                            <ImageIcon size={14} className="text-[#2d6a27]" />
+                                            <span>{language === 'bn' ? 'কভার ছবি পরিবর্তন করুন' : 'Change Cover Image'}</span>
+                                        </button>
                                     </div>
                                 ) : (
-                                    <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gray-50/50 p-6 text-center">
-                                        <ImageIcon size={32} className="mx-auto text-gray-300 mb-2" />
-                                        <p className="text-xs text-gray-500">
-                                            {language === 'bn' ? 'কভার ইমেজ আপলোড করুন বা লাইব্রেরি থেকে বেছে নিন' : 'Upload cover image or choose from media library'}
-                                        </p>
-                                    </div>
-                                )}
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <label className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer shadow-2xs">
-                                        <Upload size={14} />
-                                        <span>{t.upload}</span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                            className="hidden"
-                                        />
-                                    </label>
-
                                     <button
                                         type="button"
                                         onClick={() => setMediaPickerOpen(true)}
-                                        className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-2xs"
+                                        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/70 p-6 text-center hover:border-[#2d6a27] hover:bg-green-50/50 hover:text-[#2d6a27] transition cursor-pointer shadow-2xs"
                                     >
-                                        <ImageIcon size={14} />
-                                        <span>{language === 'bn' ? 'মিডিয়া' : 'Media'}</span>
+                                        <ImageIcon size={28} className="text-[#2d6a27]" />
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {language === 'bn' ? 'মিডিয়া লাইব্রেরি থেকে কভার ছবি নির্বাচন করুন' : 'Select Cover Image (Media Library)'}
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                            {language === 'bn' ? 'ক্লিক করে মিডিয়া লাইব্রেরি থেকে পছন্দ বা আপলোড করুন' : 'Click to choose from library or upload'}
+                                        </span>
                                     </button>
-                                </div>
+                                )}
                             </div>
 
                             {/* Category Box */}

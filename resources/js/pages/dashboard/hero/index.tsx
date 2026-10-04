@@ -448,49 +448,45 @@ export default function HeroIndex({ heroMode, slides }: Props) {
                                 </label>
 
                                 {imagePreview ? (
-                                    <div className="relative mb-3 h-40 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100">
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            className="h-full w-full object-contain sm:object-cover bg-white"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => { setImageFile(null); setMediaImagePath(''); setImagePreview(''); }}
-                                            className="absolute top-2 right-2 rounded-full bg-red-600 p-1 text-white shadow-md hover:bg-red-700 transition"
-                                            title={t.remove}
-                                        >
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-3 mb-3">
-                                        {/* Option A: Upload file */}
-                                        <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 p-4 text-center cursor-pointer hover:border-[#2d6a27] hover:bg-green-50/50 transition">
-                                            <Upload size={22} className="text-[#2d6a27]" />
-                                            <span className="text-xs font-semibold text-gray-700">
-                                                {language === 'en' ? 'Upload from PC' : 'কম্পিউটার থেকে আপলোড'}
-                                            </span>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleFileSelect}
-                                                className="hidden"
+                                    <div className="space-y-2 mb-3">
+                                        <div className="relative h-44 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 shadow-2xs">
+                                            <img
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                className="h-full w-full object-contain sm:object-cover bg-white"
                                             />
-                                        </label>
-
-                                        {/* Option B: Media Library */}
+                                            <button
+                                                type="button"
+                                                onClick={() => { setImageFile(null); setMediaImagePath(''); setImagePreview(''); }}
+                                                className="absolute top-2 right-2 rounded-full bg-red-600 p-1 text-white shadow-md hover:bg-red-700 transition cursor-pointer"
+                                                title={t.remove}
+                                            >
+                                                <X size={16} />
+                                            </button>
+                                        </div>
                                         <button
                                             type="button"
                                             onClick={() => setMediaPickerOpen(true)}
-                                            className="flex flex-col items-center justify-center gap-2 rounded-xl border border-gray-200 bg-gray-50 p-4 text-center hover:border-[#2d6a27] hover:bg-green-50/50 transition"
+                                            className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-semibold text-gray-700 hover:border-[#2d6a27] hover:bg-green-50 hover:text-[#2d6a27] transition shadow-2xs cursor-pointer"
                                         >
-                                            <ImageIcon size={22} className="text-[#2d6a27]" />
-                                            <span className="text-xs font-semibold text-gray-700">
-                                                {t.chooseFromMedia}
-                                            </span>
+                                            <ImageIcon size={14} className="text-[#2d6a27]" />
+                                            <span>{language === 'en' ? 'Change Banner Image' : 'ব্যানার ছবি পরিবর্তন করুন'}</span>
                                         </button>
                                     </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => setMediaPickerOpen(true)}
+                                        className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/70 p-6 text-center hover:border-[#2d6a27] hover:bg-green-50/50 hover:text-[#2d6a27] transition cursor-pointer shadow-2xs mb-3"
+                                    >
+                                        <ImageIcon size={30} className="text-[#2d6a27]" />
+                                        <span className="text-sm font-semibold text-gray-800">
+                                            {language === 'en' ? 'Select Banner Image (Media Library)' : 'ব্যানার ছবি নির্বাচন করুন (মিডিয়া লাইব্রেরি)'}
+                                        </span>
+                                        <span className="text-xs text-gray-400">
+                                            {language === 'en' ? 'Choose from library or upload new HD image' : 'লাইব্রেরি থেকে পছন্দ করুন বা নতুন ছবি আপলোড করুন'}
+                                        </span>
+                                    </button>
                                 )}
                             </div>
 

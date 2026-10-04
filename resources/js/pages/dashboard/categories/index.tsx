@@ -383,54 +383,43 @@ export default function CategoriesIndex({ categories }: Props) {
                                     </label>
 
                                     {imagePreview ? (
-                                        <div className="relative mb-3 inline-block">
-                                            <img
-                                                src={imagePreview}
-                                                className="h-24 w-24 rounded-xl object-cover border border-gray-200 shadow-xs"
-                                                alt="Category preview"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={handleRemoveImage}
-                                                className="absolute -right-2 -top-2 rounded-full bg-red-600 p-1 text-white shadow-xs hover:bg-red-700 transition"
-                                                title={t.remove}
-                                            >
-                                                <X size={13} />
-                                            </button>
+                                        <div className="space-y-2">
+                                            <div className="relative inline-block">
+                                                <img
+                                                    src={imagePreview}
+                                                    className="h-24 w-24 rounded-xl object-cover border border-gray-200 shadow-xs"
+                                                    alt="Category preview"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRemoveImage}
+                                                    className="absolute -right-2 -top-2 rounded-full bg-red-600 p-1 text-white shadow-xs hover:bg-red-700 transition cursor-pointer"
+                                                    title={t.remove}
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
+                                            <div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setMediaPickerOpen(true)}
+                                                    className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:border-[#2d6a27] hover:bg-green-50 hover:text-[#2d6a27] transition shadow-2xs cursor-pointer"
+                                                >
+                                                    <ImageIcon size={14} className="text-[#2d6a27]" />
+                                                    <span>{language === 'en' ? 'Change Image' : 'ছবি পরিবর্তন করুন'}</span>
+                                                </button>
+                                            </div>
                                         </div>
-                                    ) : null}
-
-                                    {/* Action buttons: Media Library & Direct Upload */}
-                                    <div className="grid grid-cols-2 gap-2">
+                                    ) : (
                                         <button
                                             type="button"
                                             onClick={() => setMediaPickerOpen(true)}
-                                            className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50/80 px-3 py-2 text-xs font-semibold text-gray-700 hover:border-[#2d6a27] hover:bg-green-50 hover:text-[#2d6a27] transition shadow-2xs"
+                                            className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50/70 p-4 text-xs font-semibold text-gray-700 hover:border-[#2d6a27] hover:bg-green-50/60 hover:text-[#2d6a27] transition shadow-2xs cursor-pointer"
                                         >
-                                            <ImageIcon size={14} className="text-[#2d6a27]" />
-                                            <span>{t.chooseFromMedia}</span>
+                                            <ImageIcon size={18} className="text-[#2d6a27]" />
+                                            <span>{language === 'en' ? 'Select Image (Media Library)' : 'মিডিয়া লাইব্রেরি থেকে ছবি নির্বাচন করুন'}</span>
                                         </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 hover:border-[#2d6a27] hover:text-[#2d6a27] transition shadow-2xs"
-                                        >
-                                            <Upload size={14} />
-                                            <span>{imagePreview ? t.change : t.uploadNewImage}</span>
-                                        </button>
-                                    </div>
-
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onClick={(e) => {
-                                            (e.target as HTMLInputElement).value = '';
-                                        }}
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
+                                    )}
                                     {errors.image && <p className="text-xs text-red-500 mt-1">{errors.image}</p>}
                                 </div>
 
