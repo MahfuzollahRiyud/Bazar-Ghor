@@ -12,10 +12,14 @@ class ShopController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Product::with('category')->where('is_active', true);
+        $query = Product::with(['category', 'categories'])->where('is_active', true);
 
         if ($request->filled('category')) {
-            $query->whereHas('category', fn($q) => $q->where('slug', $request->category));
+            $catSlug = $request->category;
+            $query->where(function ($q) use ($catSlug) {
+                $q->whereHas('categories', fn($sq) => $sq->where('slug', $catSlug))
+                  ->orWhereHas('category', fn($sq) => $sq->where('slug', $catSlug));
+            });
         }
 
         if ($request->filled('search')) {

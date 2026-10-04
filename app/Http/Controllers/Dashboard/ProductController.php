@@ -18,7 +18,7 @@ class ProductController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Product::with('category');
+        $query = Product::with(['category', 'categories']);
 
         // Search by name or SKU
         if ($request->filled('search')) {
@@ -32,7 +32,11 @@ class ProductController extends Controller
 
         // Filter by Category
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+            $catId = $request->category_id;
+            $query->where(function ($q) use ($catId) {
+                $q->where('category_id', $catId)
+                  ->orWhereHas('categories', fn($sq) => $sq->where('categories.id', $catId));
+            });
         }
 
         // Filter by Stock Status
@@ -91,8 +95,10 @@ class ProductController extends Controller
             'is_active' => $p->is_active,
             'is_featured' => $p->is_featured,
             'has_variants' => $p->has_variants,
-            'category' => $p->category?->name,
+            'category' => $p->categories->isNotEmpty() ? $p->categories->pluck('name')->join(', ') : ($p->category?->name ?? '—'),
             'category_id' => $p->category_id,
+            'category_ids' => $p->categories->pluck('id')->toArray(),
+            'categories' => $p->categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name]),
             'created_at' => $p->created_at ? $p->created_at->format('d M Y') : '',
         ]);
 
@@ -140,9 +146,22 @@ class ProductController extends Controller
             'stock_quantity' => $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0,
         ]);
 
+        $categoryIds = [];
+        if ($request->has('category_ids') && is_array($request->category_ids)) {
+            $categoryIds = array_values(array_filter(array_map('intval', $request->category_ids)));
+        } elseif ($request->filled('category_id')) {
+            $categoryIds = [(int) $request->category_id];
+        }
+
+        if (empty($categoryIds)) {
+            return back()->withErrors(['category_ids' => 'কমপক্ষে একটি ক্যাটাগরি নির্বাচন করুন।'])->withInput();
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'sku' => 'nullable|string|max:100|unique:products,sku',
@@ -160,6 +179,7 @@ class ProductController extends Controller
             'variants' => 'nullable|array',
         ], [
             'name.required' => 'পণ্যের নাম দেওয়া আবশ্যক।',
+            'category_ids.required' => 'একটি ক্যাটাগরি নির্বাচন করুন।',
             'category_id.required' => 'একটি ক্যাটাগরি নির্বাচন করুন।',
             'category_id.exists' => 'নির্বাচিত ক্যাটাগরিটি সঠিক নয়।',
             'price.required' => 'পণ্যের দাম নির্ধারণ করুন।',
@@ -186,10 +206,12 @@ class ProductController extends Controller
             }
         }
 
+        $primaryCategoryId = $categoryIds[0];
+
         $product = Product::create([
             'name' => $request->name,
             'slug' => Str::slug($request->name) . '-' . Str::random(5),
-            'category_id' => $request->category_id,
+            'category_id' => $primaryCategoryId,
             'short_description' => $request->short_description,
             'description' => $request->description,
             'sku' => $request->sku,
@@ -203,6 +225,8 @@ class ProductController extends Controller
             'thumbnail' => $thumbnailPath,
             'images' => $imagePaths ?: null,
         ]);
+
+        $product->categories()->sync($categoryIds);
 
         if ($request->boolean('has_variants') && $request->variants) {
             foreach ($request->variants as $variant) {
@@ -221,13 +245,13 @@ class ProductController extends Controller
         }
 
         return redirect()->route('dashboard.products.index')
-            ->with('success', 'পণ্য সফলভাবে যোগ করা হয়েছে।');
+            ->with('success', 'পণ্য সফলভাবে তৈরি হয়েছে।');
     }
 
     public function edit(Product $product): Response
     {
         $categories = Category::where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        $product->load('variants');
+        $product->load(['variants', 'categories']);
 
         return Inertia::render('dashboard/products/edit', [
             'product' => [
@@ -235,6 +259,9 @@ class ProductController extends Controller
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'category_id' => $product->category_id,
+                'category_ids' => $product->categories->isNotEmpty()
+                    ? $product->categories->pluck('id')->toArray()
+                    : ($product->category_id ? [$product->category_id] : []),
                 'short_description' => $product->short_description,
                 'description' => $product->description,
                 'sku' => $product->sku,
@@ -277,9 +304,22 @@ class ProductController extends Controller
             'stock_quantity' => $request->filled('stock_quantity') ? (int) $request->stock_quantity : 0,
         ]);
 
+        $categoryIds = [];
+        if ($request->has('category_ids') && is_array($request->category_ids)) {
+            $categoryIds = array_values(array_filter(array_map('intval', $request->category_ids)));
+        } elseif ($request->filled('category_id')) {
+            $categoryIds = [(int) $request->category_id];
+        }
+
+        if (empty($categoryIds)) {
+            return back()->withErrors(['category_ids' => 'কমপক্ষে একটি ক্যাটাগরি নির্বাচন করুন।'])->withInput();
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
-            'category_id' => 'required|exists:categories,id',
+            'category_ids' => 'nullable|array',
+            'category_ids.*' => 'exists:categories,id',
+            'category_id' => 'nullable|exists:categories,id',
             'short_description' => 'nullable|string|max:500',
             'description' => 'nullable|string',
             'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
@@ -297,6 +337,7 @@ class ProductController extends Controller
             'variants' => 'nullable|array',
         ], [
             'name.required' => 'পণ্যের নাম দেওয়া আবশ্যক।',
+            'category_ids.required' => 'একটি ক্যাটাগরি নির্বাচন করুন।',
             'category_id.required' => 'একটি ক্যাটাগরি নির্বাচন করুন।',
             'category_id.exists' => 'নির্বাচিত ক্যাটাগরিটি সঠিক নয়।',
             'price.required' => 'পণ্যের দাম নির্ধারণ করুন।',
@@ -323,9 +364,11 @@ class ProductController extends Controller
             }
         }
 
+        $primaryCategoryId = $categoryIds[0];
+
         $product->update([
             'name' => $request->name,
-            'category_id' => $request->category_id,
+            'category_id' => $primaryCategoryId,
             'short_description' => $request->short_description,
             'description' => $request->description,
             'sku' => $request->sku,
@@ -339,6 +382,8 @@ class ProductController extends Controller
             'thumbnail' => $thumbnailPath,
             'images' => $imagePaths ?: null,
         ]);
+
+        $product->categories()->sync($categoryIds);
 
         // Sync variants
         if ($request->boolean('has_variants') && $request->variants) {

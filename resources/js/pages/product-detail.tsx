@@ -37,6 +37,7 @@ interface Product {
     in_stock: boolean;
     sku?: string | null;
     category?: { id: number; name: string; slug: string } | null;
+    categories?: { id: number; name: string; slug: string }[];
     variants: Variant[];
 }
 
@@ -459,9 +460,25 @@ export default function ProductDetail({ product, related }: Props) {
                             </div>
                         </div>
 
-                        {product.sku && (
-                            <p className="mt-3 text-xs text-gray-400">SKU: {product.sku}</p>
-                        )}
+                        <div className="mt-4 pt-3 border-t border-gray-100 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500">
+                            {product.categories && product.categories.length > 0 && (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-semibold text-gray-700">{language === 'bn' ? 'ক্যাটাগরি:' : 'Categories:'}</span>
+                                    {product.categories.map((cat, idx) => (
+                                        <Link
+                                            key={cat.id}
+                                            href={`/shop?category=${cat.slug}`}
+                                            className="text-[#2d6a27] hover:underline font-medium"
+                                        >
+                                            {cat.name}{idx < product.categories!.length - 1 ? ',' : ''}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                            {product.sku && (
+                                <p className="text-gray-400">SKU: {product.sku}</p>
+                            )}
+                        </div>
                     </div>
                 </div>
 

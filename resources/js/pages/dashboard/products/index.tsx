@@ -26,6 +26,8 @@ interface Product {
     sku?: string | null;
     category?: string | null;
     category_id?: number | null;
+    category_ids?: number[];
+    categories?: { id: number; name: string }[];
     price: number;
     sale_price?: number | null;
     stock_quantity: number;
@@ -352,8 +354,21 @@ export default function ProductsIndex({
                                                 </td>
 
                                                 {/* Category */}
-                                                <td className="px-4 py-3 hidden md:table-cell text-xs text-gray-700 font-medium">
-                                                    {product.category || '—'}
+                                                <td className="px-4 py-3 hidden md:table-cell text-xs text-gray-700">
+                                                    {product.categories && product.categories.length > 0 ? (
+                                                        <div className="flex flex-wrap gap-1 max-w-[220px]">
+                                                            {product.categories.map((c) => (
+                                                                <span
+                                                                    key={c.id}
+                                                                    className="inline-block rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700 border border-gray-200"
+                                                                >
+                                                                    {c.name}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="font-medium">{product.category || '—'}</span>
+                                                    )}
                                                 </td>
 
                                                 {/* Price */}

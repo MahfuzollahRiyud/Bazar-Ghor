@@ -1,7 +1,7 @@
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { Film, ImageIcon, Loader2, Plus, Upload, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { Check, Film, ImageIcon, Loader2, Plus, Search, Upload, X } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import MediaPickerModal, { MediaItem } from '@/components/dashboard/MediaPickerModal';
 
@@ -30,6 +30,7 @@ interface ProductData {
     id: number;
     name: string;
     category_id: number;
+    category_ids?: number[];
     short_description: string;
     description: string;
     sku: string;
@@ -76,6 +77,32 @@ export default function ProductEdit({ product, categories }: Props) {
         is_featured: product.is_featured,
         is_active: product.is_active,
     });
+
+    const initialCategoryIds: number[] = product.category_ids && product.category_ids.length > 0
+        ? product.category_ids
+        : (product.category_id ? [product.category_id] : []);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>(initialCategoryIds);
+    const [categorySearch, setCategorySearch] = useState('');
+
+    const filteredCategories = useMemo(() => {
+        if (!categorySearch.trim()) return categories;
+        return categories.filter((c) =>
+            c.name.toLowerCase().includes(categorySearch.trim().toLowerCase())
+        );
+    }, [categories, categorySearch]);
+
+    const toggleCategory = (id: number) => {
+        setSelectedCategoryIds((prev) => {
+            const next = prev.includes(id) ? prev.filter((cId) => cId !== id) : [...prev, id];
+            if (next.length > 0 && errors.category_id) {
+                setErrors((e) => {
+                    const { category_id: _removed, ...rest } = e;
+                    return rest;
+                });
+            }
+            return next;
+        });
+    };
 
     const [newThumbnail, setNewThumbnail] = useState<File | null>(null);
     const [mediaThumbnailPath, setMediaThumbnailPath] = useState<string | null>(null);
@@ -154,11 +181,19 @@ export default function ProductEdit({ product, categories }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setSubmitting(true);
-        setErrors({});
+        if (selectedCategoryIds.length === 0) {
+            toast.error(language === 'bn' ? 'কমপক্ষে একটি ক্যাটাগরি নির্বাচন করুন' : 'Please select at least one category');
+            setErrors({ category_id: language === 'bn' ? 'কমপক্ষে একটি ক্যাটাগরি নির্বাচন করুন।' : 'Please select at least one category.' });
+            setSubmitting(false);
+            return;
+        }
 
         const data = new FormData();
         data.append('name', form.name);
-        data.append('category_id', String(form.category_id));
+        selectedCategoryIds.forEach((id) => {
+            data.append('category_ids[]', String(id));
+        });
+        data.append('category_id', String(selectedCategoryIds[0]));
         data.append('short_description', form.short_description || '');
         data.append('description', form.description || '');
         if (form.sku.trim()) data.append('sku', form.sku.trim());
@@ -279,21 +314,98 @@ export default function ProductEdit({ product, categories }: Props) {
                                     {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        {t.category} *
-                                    </label>
-                                    <select
-                                        name="category_id"
-                                        value={form.category_id}
-                                        onChange={handleChange}
-                                        className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none bg-white"
-                                    >
-                                        {categories.map((c) => (
-                                            <option key={c.id} value={c.id}>
-                                                {c.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                        <label className="block text-sm font-medium text-gray-700">
+                                            {t.category} *
+                                        </label>
+                                        <span className="text-xs font-semibold text-[#2d6a27]">
+                                            {selectedCategoryIds.length > 0 ? (
+                                                language === 'bn'
+                                                    ? `${selectedCategoryIds.length}টি ক্যাটাগরি নির্বাচিত`
+                                                    : `${selectedCategoryIds.length} selected`
+                                            ) : (
+                                                <span className="text-gray-400 font-normal">
+                                                    {language === 'bn' ? 'একাধিক ক্যাটাগরি সিলেক্ট করতে পারেন' : 'You can select multiple'}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </div>
+
+                                    {/* Selected Categories Badges */}
+                                    {selectedCategoryIds.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 mb-2.5 p-2 bg-green-50/70 rounded-xl border border-green-200/80">
+                                            {selectedCategoryIds.map((id) => {
+                                                const cat = categories.find((c) => c.id === id);
+                                                if (!cat) return null;
+                                                return (
+                                                    <span
+                                                        key={id}
+                                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#2d6a27] text-white shadow-xs"
+                                                    >
+                                                        <span>{cat.name}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleCategory(id)}
+                                                            className="hover:bg-black/20 rounded p-0.5 transition"
+                                                            title={language === 'bn' ? 'মুছে ফেলুন' : 'Remove'}
+                                                        >
+                                                            <X size={12} />
+                                                        </button>
+                                                    </span>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* Search Filter for categories */}
+                                    {categories.length > 6 && (
+                                        <div className="relative mb-2">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                                            <input
+                                                type="text"
+                                                value={categorySearch}
+                                                onChange={(e) => setCategorySearch(e.target.value)}
+                                                placeholder={language === 'bn' ? 'ক্যাটাগরি খুঁজুন...' : 'Search categories...'}
+                                                className="w-full rounded-lg border border-gray-200 pl-8 pr-3 py-1.5 text-xs focus:border-[#2d6a27] focus:outline-none bg-gray-50/50"
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Category List Picker */}
+                                    <div className={`p-3 rounded-xl border bg-gray-50/50 max-h-48 overflow-y-auto ${
+                                        errors.category_id ? 'border-red-400 bg-red-50/20' : 'border-gray-200'
+                                    }`}>
+                                        <div className="flex flex-wrap gap-2">
+                                            {filteredCategories.map((c) => {
+                                                const isSelected = selectedCategoryIds.includes(c.id);
+                                                return (
+                                                    <button
+                                                        key={c.id}
+                                                        type="button"
+                                                        onClick={() => toggleCategory(c.id)}
+                                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
+                                                            isSelected
+                                                                ? 'bg-[#2d6a27] text-white shadow-xs ring-1 ring-[#2d6a27]'
+                                                                : 'bg-white text-gray-700 border border-gray-200 hover:border-[#2d6a27] hover:text-[#2d6a27]'
+                                                        }`}
+                                                    >
+                                                        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded border ${
+                                                            isSelected ? 'border-white bg-white/20' : 'border-gray-300'
+                                                        }`}>
+                                                            {isSelected && <Check size={10} className="stroke-[3]" />}
+                                                        </span>
+                                                        <span>{c.name}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                            {filteredCategories.length === 0 && (
+                                                <p className="text-xs text-gray-400 py-1">
+                                                    {language === 'bn' ? 'কোনো ক্যাটাগরি পাওয়া যায়নি।' : 'No categories found.'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {errors.category_id && <p className="mt-1 text-xs text-red-500">{errors.category_id}</p>}
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between mb-1.5">

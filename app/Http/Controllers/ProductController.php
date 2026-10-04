@@ -10,13 +10,21 @@ class ProductController extends Controller
 {
     public function show(string $slug): Response
     {
-        $product = Product::with(['category', 'variants' => fn($q) => $q->where('is_active', true)])
+        $product = Product::with(['category', 'categories', 'variants' => fn($q) => $q->where('is_active', true)])
             ->where('slug', $slug)
             ->where('is_active', true)
             ->firstOrFail();
 
-        $related = Product::with('category')
-            ->where('category_id', $product->category_id)
+        $categoryIds = $product->categories->pluck('id')->toArray();
+        if (empty($categoryIds) && $product->category_id) {
+            $categoryIds = [$product->category_id];
+        }
+
+        $related = Product::with(['category', 'categories'])
+            ->where(function ($q) use ($categoryIds) {
+                $q->whereIn('category_id', $categoryIds)
+                  ->orWhereHas('categories', fn($sq) => $sq->whereIn('categories.id', $categoryIds));
+            })
             ->where('id', '!=', $product->id)
             ->where('is_active', true)
             ->take(4)
@@ -58,7 +66,16 @@ class ProductController extends Controller
                     'id' => $product->category->id,
                     'name' => $product->category->name,
                     'slug' => $product->category->slug,
-                ] : null,
+                ] : ($product->categories->first() ? [
+                    'id' => $product->categories->first()->id,
+                    'name' => $product->categories->first()->name,
+                    'slug' => $product->categories->first()->slug,
+                ] : null),
+                'categories' => $product->categories->map(fn($c) => [
+                    'id' => $c->id,
+                    'name' => $c->name,
+                    'slug' => $c->slug,
+                ]),
                 'variants' => $product->variants->map(fn($v) => [
                     'id' => $v->id,
                     'name' => $v->name,
