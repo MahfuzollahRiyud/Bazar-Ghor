@@ -53,6 +53,9 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->group(functio
 Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashboard')->name('dashboard.')->group(function () {
 
     // Products
+    Route::post('/products/bulk-action', [DashboardProductController::class, 'bulkAction'])->name('products.bulk-action');
+    Route::post('/products/{id}/restore', [DashboardProductController::class, 'restore'])->name('products.restore');
+    Route::delete('/products/{id}/force-delete', [DashboardProductController::class, 'forceDelete'])->name('products.force-delete');
     Route::get('/products', [DashboardProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [DashboardProductController::class, 'create'])->name('products.create');
     Route::post('/products', [DashboardProductController::class, 'store'])->name('products.store');

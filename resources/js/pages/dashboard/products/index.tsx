@@ -35,6 +35,8 @@ interface Product {
     is_active: boolean;
     is_featured: boolean;
     has_variants: boolean;
+    is_trashed?: boolean;
+    deleted_at?: string | null;
     created_at: string;
 }
 
@@ -60,10 +62,13 @@ interface Filters {
 }
 
 interface Stats {
+    all?: number;
     total: number;
     in_stock: number;
     out_of_stock: number;
     active: number;
+    inactive?: number;
+    trash?: number;
 }
 
 interface Props {
@@ -96,13 +101,19 @@ export default function ProductsIndex({
     const [stockStatus, setStockStatus] = useState(safeFilters.stock_status ?? '');
     const [sort, setSort] = useState(safeFilters.sort ?? '');
 
+    const isTrashView = safeFilters.status === 'trash';
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [bulkProcessing, setBulkProcessing] = useState(false);
+
     const applyFilters = (overrides: Partial<Filters> = {}) => {
+        setSelectedIds([]);
         router.get(
             '/dashboard/products',
             {
                 search: overrides.search !== undefined ? overrides.search : search,
                 category_id: overrides.category_id !== undefined ? overrides.category_id : categoryId,
                 stock_status: overrides.stock_status !== undefined ? overrides.stock_status : stockStatus,
+                status: overrides.status !== undefined ? overrides.status : (safeFilters.status || ''),
                 sort: overrides.sort !== undefined ? overrides.sort : sort,
             },
             { preserveState: true, replace: true }
@@ -119,20 +130,96 @@ export default function ProductsIndex({
         setCategoryId('');
         setStockStatus('');
         setSort('');
+        setSelectedIds([]);
         router.get('/dashboard/products');
     };
 
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedIds(safeProductsList.map((p) => p.id));
+        } else {
+            setSelectedIds([]);
+        }
+    };
+
+    const handleSelectOne = (id: number, checked: boolean) => {
+        if (checked) {
+            setSelectedIds((prev) => [...prev, id]);
+        } else {
+            setSelectedIds((prev) => prev.filter((item) => item !== id));
+        }
+    };
+
+    const isAllSelected = safeProductsList.length > 0 && selectedIds.length === safeProductsList.length;
+
+    const handleBulkAction = (action: 'trash' | 'restore' | 'force_delete') => {
+        if (selectedIds.length === 0) return;
+
+        let confirmMsg = '';
+        if (action === 'trash') {
+            confirmMsg = language === 'bn'
+                ? `আপনি কি নিশ্চিত যে নির্বাচিত ${selectedIds.length}টি পণ্য ট্র্যাশে পাঠাতে চান?`
+                : `Move ${selectedIds.length} selected products to trash?`;
+        } else if (action === 'restore') {
+            confirmMsg = language === 'bn'
+                ? `নির্বাচিত ${selectedIds.length}টি পণ্য পুনরুদ্ধার করতে চান?`
+                : `Restore ${selectedIds.length} selected products?`;
+        } else if (action === 'force_delete') {
+            confirmMsg = language === 'bn'
+                ? `সতর্কতা: নির্বাচিত ${selectedIds.length}টি পণ্য এবং তাদের ছবি স্থায়ীভাবে ডিলিট হয়ে যাবে! আপনি কি নিশ্চিত?`
+                : `Warning: ${selectedIds.length} products and their media will be permanently deleted! Are you sure?`;
+        }
+
+        if (!confirm(confirmMsg)) return;
+
+        setBulkProcessing(true);
+        router.post('/dashboard/products/bulk-action', {
+            action,
+            ids: selectedIds,
+        }, {
+            onSuccess: () => {
+                setSelectedIds([]);
+                toast.success(language === 'bn' ? 'অ্যাকশন সফল হয়েছে।' : 'Bulk action completed.');
+            },
+            onError: () => {
+                toast.error(language === 'bn' ? 'বাল্ক অ্যাকশন সম্পন্ন করতে সমস্যা হয়েছে।' : 'Failed to perform bulk action.');
+            },
+            onFinish: () => setBulkProcessing(false),
+        });
+    };
+
     const handleDelete = (id: number, name: string) => {
-        if (!confirm(t.deleteProductConfirm)) return;
+        if (!confirm(language === 'bn' ? `"${name}" পণ্যটি কি ট্র্যাশে পাঠাতে চান?` : `Move "${name}" to trash?`)) return;
         setDeleting(id);
         router.delete(`/dashboard/products/${id}`, {
-            onSuccess: () => toast.success(language === 'en' ? 'Product deleted successfully.' : 'পণ্যটি সফলভাবে মুছে ফেলা হয়েছে।'),
-            onError: () => toast.error(language === 'en' ? 'Failed to delete product.' : 'পণ্যটি মুছতে সমস্যা হয়েছে।'),
+            onSuccess: () => toast.success(language === 'bn' ? 'পণ্যটি ট্র্যাশে সরানো হয়েছে।' : 'Product moved to trash.'),
+            onError: () => toast.error(language === 'bn' ? 'পণ্যটি ট্র্যাশে পাঠাতে সমস্যা হয়েছে।' : 'Failed to move product to trash.'),
             onFinish: () => setDeleting(null),
         });
     };
 
-    const hasActiveFilters = !!(safeFilters.search || safeFilters.category_id || safeFilters.stock_status || safeFilters.sort);
+    const handleRestore = (id: number) => {
+        router.post(`/dashboard/products/${id}/restore`, {}, {
+            onSuccess: () => toast.success(language === 'bn' ? 'পণ্য সফলভাবে পুনরুদ্ধার করা হয়েছে।' : 'Product restored successfully.'),
+            onError: () => toast.error(language === 'bn' ? 'পুনরুদ্ধার করতে ব্যর্থ হয়েছে।' : 'Failed to restore product.'),
+        });
+    };
+
+    const handleForceDelete = (id: number, name: string) => {
+        if (!confirm(language === 'bn'
+            ? `সতর্কতা: "${name}" স্থায়ীভাবে মুছে ফেলা হবে এবং এটি আর ফেরত আনা যাবে না। আপনি কি নিশ্চিত?`
+            : `Warning: "${name}" will be permanently deleted and cannot be recovered. Are you sure?`)) {
+            return;
+        }
+        setDeleting(id);
+        router.delete(`/dashboard/products/${id}/force-delete`, {
+            onSuccess: () => toast.success(language === 'bn' ? 'পণ্যটি স্থায়ীভাবে মুছে ফেলা হয়েছে।' : 'Product permanently deleted.'),
+            onError: () => toast.error(language === 'bn' ? 'স্থায়ীভাবে মুছতে ব্যর্থ হয়েছে।' : 'Failed to delete permanently.'),
+            onFinish: () => setDeleting(null),
+        });
+    };
+
+    const hasActiveFilters = !!(safeFilters.search || safeFilters.category_id || safeFilters.stock_status || safeFilters.status || safeFilters.sort);
 
     return (
         <>
@@ -164,24 +251,52 @@ export default function ProductsIndex({
                     </Link>
                 </div>
 
-                {/* Status Tabs */}
+                {/* WordPress-style Status Tabs */}
                 <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 text-xs sm:text-sm font-medium">
                     <button
-                        onClick={() => { setStockStatus(''); applyFilters({ stock_status: '' }); }}
+                        type="button"
+                        onClick={() => applyFilters({ status: '', stock_status: '' })}
                         className={`px-3 py-1.5 rounded-lg transition ${
-                            !safeFilters.stock_status
-                                ? 'bg-[#2d6a27] text-white font-bold'
+                            !safeFilters.status && !safeFilters.stock_status
+                                ? 'bg-[#2d6a27] text-white font-bold shadow-xs'
                                 : 'text-gray-600 hover:bg-gray-100'
                         }`}
                     >
-                        {t.allProducts} <span className="opacity-80">({totalCount})</span>
+                        {t.allProducts} <span className="opacity-80">({stats?.all ?? stats?.total ?? 0})</span>
                     </button>
 
                     <button
-                        onClick={() => { setStockStatus('in_stock'); applyFilters({ stock_status: 'in_stock' }); }}
+                        type="button"
+                        onClick={() => applyFilters({ status: 'active', stock_status: '' })}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                            safeFilters.status === 'active'
+                                ? 'bg-[#2d6a27] text-white font-bold shadow-xs'
+                                : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                    >
+                        <span className="size-1.5 rounded-full bg-blue-500" />
+                        {language === 'bn' ? 'সক্রিয়' : 'Active'} <span className="opacity-80">({stats?.active ?? 0})</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => applyFilters({ status: 'inactive', stock_status: '' })}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                            safeFilters.status === 'inactive'
+                                ? 'bg-gray-700 text-white font-bold shadow-xs'
+                                : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                    >
+                        <span className="size-1.5 rounded-full bg-gray-400" />
+                        {language === 'bn' ? 'নিষ্ক্রিয়' : 'Inactive'} <span className="opacity-80">({stats?.inactive ?? 0})</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => applyFilters({ status: '', stock_status: 'in_stock' })}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                             safeFilters.stock_status === 'in_stock'
-                                ? 'bg-emerald-600 text-white font-bold'
+                                ? 'bg-emerald-600 text-white font-bold shadow-xs'
                                 : 'text-gray-600 hover:bg-emerald-50 hover:text-emerald-700'
                         }`}
                     >
@@ -190,15 +305,40 @@ export default function ProductsIndex({
                     </button>
 
                     <button
-                        onClick={() => { setStockStatus('out_of_stock'); applyFilters({ stock_status: 'out_of_stock' }); }}
+                        type="button"
+                        onClick={() => applyFilters({ status: '', stock_status: 'out_of_stock' })}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                             safeFilters.stock_status === 'out_of_stock'
-                                ? 'bg-red-600 text-white font-bold'
+                                ? 'bg-red-600 text-white font-bold shadow-xs'
                                 : 'text-gray-600 hover:bg-red-50 hover:text-red-700'
                         }`}
                     >
                         <XCircle size={14} />
                         {t.outOfStock} <span className="opacity-80">({outOfStockCount})</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => applyFilters({ status: 'trash', stock_status: '' })}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                            safeFilters.status === 'trash'
+                                ? 'bg-red-600 text-white font-bold shadow-xs'
+                                : (stats?.trash && stats.trash > 0)
+                                    ? 'text-red-600 bg-red-50 hover:bg-red-100'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                    >
+                        <Trash2 size={14} />
+                        {language === 'bn' ? 'ট্র্যাশ' : 'Trash'}{' '}
+                        <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                            safeFilters.status === 'trash'
+                                ? 'bg-white/25 text-white'
+                                : (stats?.trash && stats.trash > 0)
+                                    ? 'bg-red-200 text-red-800'
+                                    : 'bg-gray-200 text-gray-700'
+                        }`}>
+                            {stats?.trash ?? 0}
+                        </span>
                     </button>
                 </div>
 
@@ -278,12 +418,78 @@ export default function ProductsIndex({
                     </form>
                 </div>
 
+                {/* Bulk Actions Floating Bar */}
+                {selectedIds.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-emerald-50 border border-emerald-200 rounded-2xl shadow-xs">
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2d6a27] text-white text-xs font-bold">
+                                {selectedIds.length}
+                            </span>
+                            <span className="text-xs font-bold text-gray-800">
+                                {language === 'bn' ? `${selectedIds.length}টি পণ্য নির্বাচিত` : `${selectedIds.length} products selected`}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {isTrashView ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleBulkAction('restore')}
+                                        disabled={bulkProcessing}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#2d6a27] text-white hover:bg-[#23531f] transition shadow-xs disabled:opacity-50"
+                                    >
+                                        <RotateCcw size={13} />
+                                        {language === 'bn' ? 'পুনরুদ্ধার করুন' : 'Restore Selected'}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleBulkAction('force_delete')}
+                                        disabled={bulkProcessing}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-red-600 text-white hover:bg-red-700 transition shadow-xs disabled:opacity-50"
+                                    >
+                                        <Trash2 size={13} />
+                                        {language === 'bn' ? 'স্থায়ীভাবে ডিলিট' : 'Delete Permanently'}
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => handleBulkAction('trash')}
+                                    disabled={bulkProcessing}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 transition shadow-xs disabled:opacity-50"
+                                >
+                                    <Trash2 size={13} />
+                                    {language === 'bn' ? 'ট্র্যাশে পাঠান (Trash)' : 'Move to Trash'}
+                                </button>
+                            )}
+
+                            <button
+                                type="button"
+                                onClick={() => setSelectedIds([])}
+                                className="px-2.5 py-1.5 rounded-xl text-xs font-medium text-gray-600 hover:bg-white transition border border-gray-200"
+                            >
+                                {language === 'bn' ? 'বাতিল' : 'Deselect'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Products Table */}
                 <div className="rounded-2xl bg-white shadow-xs border border-gray-200 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm border-collapse">
                             <thead>
                                 <tr className="border-b border-gray-200 bg-gray-50/80 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                    <th className="px-4 py-3.5 w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllSelected}
+                                            onChange={(e) => handleSelectAll(e.target.checked)}
+                                            className="rounded border-gray-300 text-[#2d6a27] focus:ring-[#2d6a27] size-4 cursor-pointer"
+                                            title={language === 'bn' ? 'সব নির্বাচন করুন' : 'Select All'}
+                                        />
+                                    </th>
                                     <th className="px-4 py-3.5 w-16">{language === 'en' ? 'Image' : 'ছবি'}</th>
                                     <th className="px-4 py-3.5">{language === 'en' ? 'Product & SKU' : 'পণ্য ও বিবরণ'}</th>
                                     <th className="px-4 py-3.5 hidden md:table-cell">{t.category}</th>
@@ -297,8 +503,20 @@ export default function ProductsIndex({
                                 {safeProductsList.length > 0 ? (
                                     safeProductsList.map((product) => {
                                         const isInStock = Boolean(product.has_variants || (Number(product.stock_quantity) > 0));
+                                        const isSelected = selectedIds.includes(product.id);
                                         return (
-                                            <tr key={product.id} className="hover:bg-gray-50/80 transition-colors group">
+                                            <tr key={product.id} className={`transition-colors group ${
+                                                isSelected ? 'bg-emerald-50/50' : 'hover:bg-gray-50/80'
+                                            }`}>
+                                                {/* Checkbox */}
+                                                <td className="px-4 py-3 w-10">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={(e) => handleSelectOne(product.id, e.target.checked)}
+                                                        className="rounded border-gray-300 text-[#2d6a27] focus:ring-[#2d6a27] size-4 cursor-pointer"
+                                                    />
+                                                </td>
                                                 {/* Thumbnail */}
                                                 <td className="px-4 py-3">
                                                     <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gray-100 border border-gray-200">
@@ -414,21 +632,48 @@ export default function ProductsIndex({
                                                 {/* Actions */}
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex items-center justify-end gap-1.5">
-                                                        <Link
-                                                            href={`/dashboard/products/${product.id}/edit`}
-                                                            className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-700 hover:border-[#2d6a27] hover:text-[#2d6a27] transition shadow-2xs"
-                                                            title={t.edit}
-                                                        >
-                                                            <Edit size={14} />
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => handleDelete(product.id, product.name)}
-                                                            disabled={deleting === product.id}
-                                                            className="rounded-lg border border-gray-200 bg-white p-1.5 text-red-600 hover:border-red-500 hover:bg-red-50 transition shadow-2xs disabled:opacity-50"
-                                                            title={t.delete}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
+                                                        {isTrashView ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleRestore(product.id)}
+                                                                    className="inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 transition shadow-2xs"
+                                                                    title={language === 'bn' ? 'পুনরুদ্ধার করুন' : 'Restore'}
+                                                                >
+                                                                    <RotateCcw size={12} />
+                                                                    <span className="hidden sm:inline">{language === 'bn' ? 'ফেরত আনুন' : 'Restore'}</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleForceDelete(product.id, product.name)}
+                                                                    disabled={deleting === product.id}
+                                                                    className="inline-flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-2 py-1 text-xs font-bold text-red-600 hover:bg-red-100 transition shadow-2xs disabled:opacity-50"
+                                                                    title={language === 'bn' ? 'স্থায়ীভাবে মুছুন' : 'Delete Permanently'}
+                                                                >
+                                                                    <Trash2 size={12} />
+                                                                    <span className="hidden sm:inline">{language === 'bn' ? 'স্থায়ী মুছুন' : 'Delete'}</span>
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Link
+                                                                    href={`/dashboard/products/${product.id}/edit`}
+                                                                    className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-700 hover:border-[#2d6a27] hover:text-[#2d6a27] transition shadow-2xs"
+                                                                    title={t.edit}
+                                                                >
+                                                                    <Edit size={14} />
+                                                                </Link>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDelete(product.id, product.name)}
+                                                                    disabled={deleting === product.id}
+                                                                    className="rounded-lg border border-gray-200 bg-white p-1.5 text-red-600 hover:border-red-500 hover:bg-red-50 transition shadow-2xs disabled:opacity-50"
+                                                                    title={language === 'bn' ? 'ট্র্যাশে পাঠান' : 'Move to Trash'}
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </td>
                                             </tr>
@@ -436,7 +681,7 @@ export default function ProductsIndex({
                                     })
                                 ) : (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-12 text-center text-gray-500">
+                                        <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
                                             <Package size={40} className="mx-auto text-gray-300 mb-2" />
                                             <p className="font-semibold text-gray-700">
                                                 {language === 'en' ? 'No products found' : 'কোনো পণ্য পাওয়া যায়নি'}

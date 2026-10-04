@@ -18,7 +18,18 @@ class ProductController extends Controller
 {
     public function index(Request $request): Response
     {
-        $query = Product::with(['category', 'categories']);
+        $status = $request->get('status', 'all');
+
+        if ($status === 'trash') {
+            $query = Product::onlyTrashed()->with(['category', 'categories']);
+        } else {
+            $query = Product::with(['category', 'categories']);
+            if ($status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($status === 'inactive') {
+                $query->where('is_active', false);
+            }
+        }
 
         // Search by name or SKU
         if ($request->filled('search')) {
@@ -50,11 +61,6 @@ class ProductController extends Controller
                 $query->where('stock_quantity', '<=', 0)
                     ->where('has_variants', false);
             }
-        }
-
-        // Filter by Status (Active / Inactive)
-        if ($request->filled('status')) {
-            $query->where('is_active', $request->status === 'active');
         }
 
         // Sorting (A to Z, Z to A, Price, Date)
@@ -99,17 +105,22 @@ class ProductController extends Controller
             'category_id' => $p->category_id,
             'category_ids' => $p->categories->pluck('id')->toArray(),
             'categories' => $p->categories->map(fn($c) => ['id' => $c->id, 'name' => $c->name]),
+            'is_trashed' => $p->trashed(),
+            'deleted_at' => $p->deleted_at ? $p->deleted_at->format('d M Y, h:i A') : null,
             'created_at' => $p->created_at ? $p->created_at->format('d M Y') : '',
         ]);
 
         $categories = Category::where('is_active', true)->orderBy('name')->get(['id', 'name']);
 
-        // WooCommerce-style product counts
+        // WooCommerce / WordPress-style product counts
         $stats = [
+            'all' => Product::count(),
             'total' => Product::count(),
+            'active' => Product::where('is_active', true)->count(),
+            'inactive' => Product::where('is_active', false)->count(),
             'in_stock' => Product::where('stock_quantity', '>', 0)->orWhere('has_variants', true)->count(),
             'out_of_stock' => Product::where('stock_quantity', '<=', 0)->where('has_variants', false)->count(),
-            'active' => Product::where('is_active', true)->count(),
+            'trash' => Product::onlyTrashed()->count(),
         ];
 
         return Inertia::render('dashboard/products/index', [
@@ -119,7 +130,7 @@ class ProductController extends Controller
                 'search' => (string) $request->get('search', ''),
                 'category_id' => (string) $request->get('category_id', ''),
                 'stock_status' => (string) $request->get('stock_status', ''),
-                'status' => (string) $request->get('status', ''),
+                'status' => (string) $status,
                 'sort' => (string) $request->get('sort', ''),
             ],
             'stats' => $stats,
@@ -430,12 +441,64 @@ class ProductController extends Controller
 
     public function destroy(Product $product): RedirectResponse
     {
+        $product->delete();
+
+        return back()->with('success', 'পণ্যটি ট্র্যাশে সরানো হয়েছে।');
+    }
+
+    public function restore(int $id): RedirectResponse
+    {
+        $product = Product::onlyTrashed()->findOrFail($id);
+        $product->restore();
+
+        return back()->with('success', 'পণ্যটি সফলভাবে পুনরুদ্ধার (Restore) করা হয়েছে।');
+    }
+
+    public function forceDelete(int $id): RedirectResponse
+    {
+        $product = Product::onlyTrashed()->findOrFail($id);
         if ($product->thumbnail) Storage::disk('public')->delete($product->thumbnail);
         foreach ($product->images ?? [] as $img) {
             Storage::disk('public')->delete($img);
         }
-        $product->delete();
+        $product->forceDelete();
 
-        return back()->with('success', 'পণ্য মুছে ফেলা হয়েছে।');
+        return back()->with('success', 'পণ্যটি স্থায়ীভাবে মুছে ফেলা হয়েছে।');
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'action' => 'required|in:trash,restore,force_delete',
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+        ]);
+
+        $ids = $request->ids;
+        $action = $request->action;
+
+        if ($action === 'trash') {
+            Product::whereIn('id', $ids)->delete();
+            return back()->with('success', count($ids) . 'টি পণ্য ট্র্যাশে সরানো হয়েছে।');
+        }
+
+        if ($action === 'restore') {
+            Product::onlyTrashed()->whereIn('id', $ids)->restore();
+            return back()->with('success', count($ids) . 'টি পণ্য পুনরুদ্ধার করা হয়েছে।');
+        }
+
+        if ($action === 'force_delete') {
+            $products = Product::onlyTrashed()->whereIn('id', $ids)->get();
+            foreach ($products as $p) {
+                if ($p->thumbnail) Storage::disk('public')->delete($p->thumbnail);
+                foreach ($p->images ?? [] as $img) {
+                    Storage::disk('public')->delete($img);
+                }
+                $p->forceDelete();
+            }
+            return back()->with('success', count($products) . 'টি পণ্য স্থায়ীভাবে মুছে ফেলা হয়েছে।');
+        }
+
+        return back();
     }
 }
