@@ -74,6 +74,7 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::get('/orders', [DashboardOrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [DashboardOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/status', [DashboardOrderController::class, 'updateStatus'])->name('orders.status');
+    Route::post('/orders/bulk-status', [DashboardOrderController::class, 'bulkStatus'])->name('orders.bulk-status');
     Route::delete('/orders/{order}', [DashboardOrderController::class, 'destroy'])->name('orders.destroy');
 
     // Coupons
@@ -126,11 +127,13 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::delete('/blogs/{blog}', [\App\Http\Controllers\Dashboard\BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('/blogs/{blog}/toggle', [\App\Http\Controllers\Dashboard\BlogController::class, 'toggle'])->name('blogs.toggle');
 
-    // Site Settings (Title, Logo, Favicon & Payment Gateways)
+    // Site Settings (Title, Logo, Favicon, Payment Gateways & Courier Services)
     Route::get('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'index'])->name('settings.general');
     Route::post('/settings/general', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'update'])->name('settings.update');
     Route::get('/settings/payment', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'payment'])->name('settings.payment');
     Route::post('/settings/payment', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updatePayment'])->name('settings.payment.update');
+    Route::get('/settings/courier', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'courier'])->name('settings.courier');
+    Route::post('/settings/courier', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updateCourier'])->name('settings.courier.update');
     Route::post('/settings/marketing-cost', [DashboardController::class, 'updateMarketingCost'])->name('settings.marketing-cost');
 
     // Marketing Expenses

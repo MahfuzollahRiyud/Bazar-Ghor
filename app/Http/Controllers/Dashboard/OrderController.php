@@ -107,8 +107,34 @@ class OrderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
         ]);
 
+        $this->handleOrderStatusChange($order, $request->status);
+
+        return back()->with('success', 'অর্ডার স্ট্যাটাস আপডেট হয়েছে।');
+    }
+
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'exists:orders,id',
+            'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
+        ]);
+
+        $orders = Order::whereIn('id', $request->order_ids)->get();
+
+        foreach ($orders as $order) {
+            $this->handleOrderStatusChange($order, $request->status);
+        }
+
+        return back()->with('success', count($orders) . 'টি অর্ডারের স্ট্যাটাস সফলভাবে আপডেট হয়েছে।');
+    }
+
+    private function handleOrderStatusChange(Order $order, string $newStatus): void
+    {
         $oldStatus = $order->status;
-        $newStatus = $request->status;
+        if ($oldStatus === $newStatus) {
+            return;
+        }
 
         if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
             // Restore inventory and decrease sold count
@@ -153,8 +179,6 @@ class OrderController extends Controller
         }
 
         $order->update(['status' => $newStatus]);
-
-        return back()->with('success', 'অর্ডার স্ট্যাটাস আপডেট হয়েছে।');
     }
 
     public function destroy(Order $order): RedirectResponse

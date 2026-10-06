@@ -13,6 +13,7 @@ import {
     Share2,
     Newspaper,
     Settings,
+    Truck,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -63,6 +64,11 @@ export function AppSidebar() {
             title: t.orders,
             href: '/dashboard/orders',
             icon: ShoppingCart,
+        },
+        {
+            title: language === 'en' ? 'Courier Services' : 'কুরিয়ার সার্ভিস',
+            href: '/dashboard/settings/courier',
+            icon: Truck,
         },
         {
             title: t.customers,

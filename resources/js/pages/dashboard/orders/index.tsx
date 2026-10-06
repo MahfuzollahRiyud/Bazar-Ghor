@@ -1,7 +1,8 @@
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, X } from 'lucide-react';
+import { ChevronDown, Loader2, Search, X } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface Order {
     id: number;
@@ -50,19 +51,22 @@ interface Props {
     statusCounts: StatusCounts;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-    yellow: 'bg-yellow-100 text-yellow-700',
-    blue: 'bg-blue-100 text-blue-700',
-    purple: 'bg-purple-100 text-purple-700',
-    orange: 'bg-orange-100 text-orange-700',
-    green: 'bg-green-100 text-green-700',
-    red: 'bg-red-100 text-red-700',
-    gray: 'bg-gray-100 text-gray-700',
+const STATUS_COLOR_MAP: Record<string, string> = {
+    pending: 'bg-yellow-50 text-yellow-800 border-yellow-300 focus:ring-yellow-400',
+    confirmed: 'bg-orange-50 text-orange-800 border-orange-300 focus:ring-orange-400',
+    processing: 'bg-purple-50 text-purple-800 border-purple-300 focus:ring-purple-400',
+    shipped: 'bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-400',
+    delivered: 'bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-400',
+    cancelled: 'bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-400',
 };
 
 export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
     const { t, language } = useAdminLanguage();
     const [search, setSearch] = useState(filters.search ?? '');
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [bulkStatus, setBulkStatus] = useState<string>('');
+    const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+    const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
 
     const statusTabs = [
         { key: '', label: t.all, countKey: 'all' },
@@ -81,6 +85,61 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         applyFilter({ search });
+    };
+
+    const handleToggleSelect = (id: number) => {
+        setSelectedIds((prev) =>
+            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+        );
+    };
+
+    const isAllSelected = orders.data.length > 0 && selectedIds.length === orders.data.length;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(orders.data.map((o) => o.id));
+        }
+    };
+
+    const handleInlineStatusChange = (orderId: number, newStatus: string) => {
+        setUpdatingOrderId(orderId);
+        router.patch(`/dashboard/orders/${orderId}/status`, { status: newStatus }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(language === 'en' ? 'Order status updated' : 'অর্ডার স্ট্যাটাস সফলভাবে আপডেট হয়েছে');
+            },
+            onError: () => {
+                toast.error(language === 'en' ? 'Failed to update order status' : 'স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে');
+            },
+            onFinish: () => setUpdatingOrderId(null),
+        });
+    };
+
+    const handleBulkSubmit = () => {
+        if (!bulkStatus || selectedIds.length === 0) return;
+        setIsBulkSubmitting(true);
+        router.post('/dashboard/orders/bulk-status', {
+            order_ids: selectedIds,
+            status: bulkStatus,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                const count = selectedIds.length;
+                setSelectedIds([]);
+                setBulkStatus('');
+                toast.success(
+                    language === 'en'
+                        ? `${count} orders updated successfully`
+                        : `${count}টি অর্ডারের স্ট্যাটাস সফলভাবে আপডেট হয়েছে`
+                );
+            },
+            onError: () => {
+                toast.error(language === 'en' ? 'Bulk update failed' : 'বাল্ক আপডেট করতে সমস্যা হয়েছে');
+            },
+            onFinish: () => setIsBulkSubmitting(false),
+        });
     };
 
     return (
@@ -122,6 +181,56 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
                     ))}
                 </div>
 
+                {/* Bulk Action Bar (Visible when orders selected) */}
+                {selectedIds.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-[#2d6a27]/10 border border-[#2d6a27]/30 p-3 sm:p-4 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex items-center gap-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2d6a27] text-white text-xs font-bold shadow-xs">
+                                {selectedIds.length}
+                            </span>
+                            <span className="font-bold text-gray-900">
+                                {language === 'en'
+                                    ? `${selectedIds.length} orders selected`
+                                    : `${selectedIds.length}টি অর্ডার সিলেক্ট করা হয়েছে`}
+                            </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <select
+                                value={bulkStatus}
+                                onChange={(e) => setBulkStatus(e.target.value)}
+                                className="rounded-xl border border-gray-300 bg-white px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-2xs focus:border-[#2d6a27] focus:outline-none"
+                            >
+                                <option value="">{language === 'en' ? '-- Select Status --' : '-- স্ট্যাটাস নির্বাচন করুন --'}</option>
+                                <option value="pending">Pending (পেন্ডিং)</option>
+                                <option value="confirmed">Confirmed (কনফার্মড)</option>
+                                <option value="processing">Processing (প্রসেসিং)</option>
+                                <option value="shipped">Shipped (শিপিং/কুরিয়ার)</option>
+                                <option value="delivered">Delivered (ডেলিভার্ড)</option>
+                                <option value="cancelled">Cancelled (বাতিল)</option>
+                            </select>
+
+                            <button
+                                type="button"
+                                onClick={handleBulkSubmit}
+                                disabled={!bulkStatus || isBulkSubmitting}
+                                className="flex items-center gap-1.5 rounded-xl bg-[#2d6a27] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#23531f] disabled:opacity-50 transition cursor-pointer"
+                            >
+                                {isBulkSubmitting && <Loader2 size={13} className="animate-spin" />}
+                                {language === 'en' ? 'Update Selected' : 'বাল্ক স্ট্যাটাস আপডেট করুন'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setSelectedIds([])}
+                                className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 shadow-2xs transition cursor-pointer"
+                            >
+                                {language === 'en' ? 'Deselect All' : 'বাতিল'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Search */}
                 <form onSubmit={handleSearch} className="flex gap-2">
                     <div className="relative flex-1 max-w-sm">
@@ -160,6 +269,15 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
                         <table className="w-full text-left text-sm text-gray-600">
                             <thead>
                                 <tr className="border-b bg-gray-50/70 text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                    <th className="w-10 px-4 py-3.5 text-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={isAllSelected}
+                                            onChange={handleSelectAll}
+                                            className="h-4 w-4 rounded border-gray-300 accent-[#2d6a27] cursor-pointer"
+                                            title={language === 'en' ? 'Select All on this page' : 'সবগুলো সিলেক্ট করুন'}
+                                        />
+                                    </th>
                                     <th className="px-4 py-3.5">{t.order}</th>
                                     <th className="px-4 py-3.5">{t.customer}</th>
                                     <th className="px-4 py-3.5 hidden md:table-cell">{t.district}</th>
@@ -173,54 +291,97 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
                             <tbody className="divide-y divide-gray-100">
                                 {orders.data.length === 0 ? (
                                     <tr>
-                                        <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
+                                        <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
                                             {language === 'en' ? 'No orders found matching your filters.' : 'কোনো অর্ডার পাওয়া যায়নি।'}
                                         </td>
                                     </tr>
                                 ) : (
-                                    orders.data.map((order) => (
-                                        <tr key={order.id} className="hover:bg-gray-50/60 transition-colors">
-                                            <td className="px-4 py-3.5 font-mono text-xs font-bold text-gray-900">
-                                                {order.order_number}
-                                            </td>
-                                            <td className="px-4 py-3.5">
-                                                <p className="font-semibold text-gray-900 text-xs">{order.customer_name}</p>
-                                                <p className="text-xs text-gray-500 font-mono">{order.customer_phone}</p>
-                                            </td>
-                                            <td className="px-4 py-3.5 hidden md:table-cell text-gray-700 text-xs">
-                                                {order.district}
-                                                <span className="text-gray-400 ml-1">
-                                                    {order.delivery_area === 'inside_dhaka'
-                                                        ? (language === 'en' ? '(Dhaka)' : '(ঢাকা)')
-                                                        : (language === 'en' ? '(Outside)' : '(বাইরে)')}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3.5 hidden md:table-cell text-gray-700 text-xs">
-                                                {order.items_count} {language === 'en' ? 'pcs' : 'টি'}
-                                            </td>
-                                            <td className="px-4 py-3.5">
-                                                <p className="font-bold text-[#2d6a27] text-xs sm:text-sm">
-                                                    ৳{Number(order.total).toLocaleString()}
-                                                </p>
-                                            </td>
-                                            <td className="px-4 py-3.5">
-                                                <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${STATUS_STYLES[order.status_color] ?? STATUS_STYLES.gray}`}>
-                                                    {order.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3.5 hidden lg:table-cell text-gray-500 text-xs">
-                                                {order.created_at}
-                                            </td>
-                                            <td className="px-4 py-3.5 text-right">
-                                                <Link
-                                                    href={`/dashboard/orders/${order.id}`}
-                                                    className="inline-block rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-[#2d6a27] hover:text-white transition whitespace-nowrap"
-                                                >
-                                                    {language === 'en' ? 'View Details' : 'বিস্তারিত'}
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    orders.data.map((order) => {
+                                        const isSelected = selectedIds.includes(order.id);
+                                        const isUpdating = updatingOrderId === order.id;
+
+                                        return (
+                                            <tr
+                                                key={order.id}
+                                                className={`transition-colors ${
+                                                    isSelected ? 'bg-[#2d6a27]/5' : 'hover:bg-gray-50/60'
+                                                }`}
+                                            >
+                                                <td className="w-10 px-4 py-3.5 text-center">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => handleToggleSelect(order.id)}
+                                                        className="h-4 w-4 rounded border-gray-300 accent-[#2d6a27] cursor-pointer"
+                                                    />
+                                                </td>
+                                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-gray-900">
+                                                    {order.order_number}
+                                                </td>
+                                                <td className="px-4 py-3.5">
+                                                    <p className="font-semibold text-gray-900 text-xs">{order.customer_name}</p>
+                                                    <p className="text-xs text-gray-500 font-mono">{order.customer_phone}</p>
+                                                </td>
+                                                <td className="px-4 py-3.5 hidden md:table-cell text-gray-700 text-xs">
+                                                    {order.district}
+                                                    <span className="text-gray-400 ml-1">
+                                                        {order.delivery_area === 'inside_dhaka'
+                                                            ? (language === 'en' ? '(Dhaka)' : '(ঢাকা)')
+                                                            : (language === 'en' ? '(Outside)' : '(বাইরে)')}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3.5 hidden md:table-cell text-gray-700 text-xs">
+                                                    {order.items_count} {language === 'en' ? 'pcs' : 'টি'}
+                                                </td>
+                                                <td className="px-4 py-3.5">
+                                                    <p className="font-bold text-[#2d6a27] text-xs sm:text-sm">
+                                                        ৳{Number(order.total).toLocaleString()}
+                                                    </p>
+                                                </td>
+
+                                                {/* Interactive Inline Status Dropdown */}
+                                                <td className="px-4 py-3.5">
+                                                    <div className="relative inline-flex items-center">
+                                                        <select
+                                                            value={order.status}
+                                                            disabled={isUpdating}
+                                                            onChange={(e) => handleInlineStatusChange(order.id, e.target.value)}
+                                                            className={`cursor-pointer rounded-full pl-3 pr-7 py-1 text-xs font-bold capitalize border transition-all shadow-2xs focus:outline-none focus:ring-2 focus:ring-offset-1 appearance-none ${
+                                                                STATUS_COLOR_MAP[order.status] ?? 'bg-gray-100 text-gray-700 border-gray-200'
+                                                            } ${isUpdating ? 'opacity-50 cursor-wait' : 'hover:opacity-90'}`}
+                                                            title={language === 'en' ? 'Change status directly' : 'সরাসরি স্ট্যাটাস পরিবর্তন করুন'}
+                                                        >
+                                                            <option value="pending" className="bg-white text-gray-800 font-normal">Pending (পেন্ডিং)</option>
+                                                            <option value="confirmed" className="bg-white text-gray-800 font-normal">Confirmed (কনফার্মড)</option>
+                                                            <option value="processing" className="bg-white text-gray-800 font-normal">Processing (প্রসেসিং)</option>
+                                                            <option value="shipped" className="bg-white text-gray-800 font-normal">Shipped (শিপিং/কুরিয়ার)</option>
+                                                            <option value="delivered" className="bg-white text-gray-800 font-normal">Delivered (ডেলিভার্ড)</option>
+                                                            <option value="cancelled" className="bg-white text-gray-800 font-normal">Cancelled (বাতিল)</option>
+                                                        </select>
+                                                        <span className="pointer-events-none absolute right-2 text-current opacity-70">
+                                                            {isUpdating ? (
+                                                                <Loader2 size={12} className="animate-spin" />
+                                                            ) : (
+                                                                <ChevronDown size={12} />
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                </td>
+
+                                                <td className="px-4 py-3.5 hidden lg:table-cell text-gray-500 text-xs">
+                                                    {order.created_at}
+                                                </td>
+                                                <td className="px-4 py-3.5 text-right">
+                                                    <Link
+                                                        href={`/dashboard/orders/${order.id}`}
+                                                        className="inline-block rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-[#2d6a27] hover:text-white transition whitespace-nowrap shadow-2xs"
+                                                    >
+                                                        {language === 'en' ? 'View Details' : 'বিস্তারিত'}
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

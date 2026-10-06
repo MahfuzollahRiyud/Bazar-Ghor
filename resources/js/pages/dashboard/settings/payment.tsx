@@ -122,6 +122,12 @@ export default function PaymentSettings({ gateways }: Props) {
                     >
                         {language === 'en' ? 'Payment Gateways' : 'পেমেন্ট গেটওয়ে'}
                     </Link>
+                    <Link
+                        href="/dashboard/settings/courier"
+                        className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent transition"
+                    >
+                        {language === 'en' ? 'Courier Services' : 'কুরিয়ার সার্ভিস'}
+                    </Link>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

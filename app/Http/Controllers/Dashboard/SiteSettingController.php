@@ -176,4 +176,70 @@ class SiteSettingController extends Controller
 
         return back()->with('success', 'পেমেন্ট গেটওয়ে সেটিংস সফলভাবে আপডেট হয়েছে।');
     }
+
+    public function courier(): Response
+    {
+        $couriers = [
+            'steadfast' => [
+                'enabled' => SiteSetting::get('courier_steadfast_enabled', '0') === '1',
+                'api_key' => SiteSetting::get('courier_steadfast_api_key', ''),
+                'secret_key' => SiteSetting::get('courier_steadfast_secret_key', ''),
+                'base_url' => SiteSetting::get('courier_steadfast_base_url', 'https://portal.packzy.com/api/v1'),
+                'delivery_note' => SiteSetting::get('courier_steadfast_delivery_note', 'Handle with care'),
+            ],
+            'pathao' => [
+                'enabled' => SiteSetting::get('courier_pathao_enabled', '0') === '1',
+                'client_id' => SiteSetting::get('courier_pathao_client_id', ''),
+                'client_secret' => SiteSetting::get('courier_pathao_client_secret', ''),
+                'username' => SiteSetting::get('courier_pathao_username', ''),
+                'password' => SiteSetting::get('courier_pathao_password', ''),
+                'store_id' => SiteSetting::get('courier_pathao_store_id', ''),
+                'base_url' => SiteSetting::get('courier_pathao_base_url', 'https://api-hermes.pathao.com'),
+                'mode' => SiteSetting::get('courier_pathao_mode', 'sandbox'),
+            ],
+        ];
+
+        return Inertia::render('dashboard/settings/courier', [
+            'couriers' => $couriers,
+        ]);
+    }
+
+    public function updateCourier(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'steadfast.enabled' => 'nullable|boolean',
+            'steadfast.api_key' => 'nullable|string|max:255',
+            'steadfast.secret_key' => 'nullable|string|max:255',
+            'steadfast.base_url' => 'nullable|string|max:255',
+            'steadfast.delivery_note' => 'nullable|string|max:255',
+
+            'pathao.enabled' => 'nullable|boolean',
+            'pathao.client_id' => 'nullable|string|max:255',
+            'pathao.client_secret' => 'nullable|string|max:255',
+            'pathao.username' => 'nullable|string|max:255',
+            'pathao.password' => 'nullable|string|max:255',
+            'pathao.store_id' => 'nullable|string|max:255',
+            'pathao.base_url' => 'nullable|string|max:255',
+            'pathao.mode' => 'nullable|string|in:sandbox,live',
+        ]);
+
+        // Save Steadfast
+        SiteSetting::set('courier_steadfast_enabled', !empty($data['steadfast']['enabled']) ? '1' : '0');
+        SiteSetting::set('courier_steadfast_api_key', $data['steadfast']['api_key'] ?? '');
+        SiteSetting::set('courier_steadfast_secret_key', $data['steadfast']['secret_key'] ?? '');
+        SiteSetting::set('courier_steadfast_base_url', $data['steadfast']['base_url'] ?? 'https://portal.packzy.com/api/v1');
+        SiteSetting::set('courier_steadfast_delivery_note', $data['steadfast']['delivery_note'] ?? 'Handle with care');
+
+        // Save Pathao
+        SiteSetting::set('courier_pathao_enabled', !empty($data['pathao']['enabled']) ? '1' : '0');
+        SiteSetting::set('courier_pathao_client_id', $data['pathao']['client_id'] ?? '');
+        SiteSetting::set('courier_pathao_client_secret', $data['pathao']['client_secret'] ?? '');
+        SiteSetting::set('courier_pathao_username', $data['pathao']['username'] ?? '');
+        SiteSetting::set('courier_pathao_password', $data['pathao']['password'] ?? '');
+        SiteSetting::set('courier_pathao_store_id', $data['pathao']['store_id'] ?? '');
+        SiteSetting::set('courier_pathao_base_url', $data['pathao']['base_url'] ?? 'https://api-hermes.pathao.com');
+        SiteSetting::set('courier_pathao_mode', $data['pathao']['mode'] ?? 'sandbox');
+
+        return back()->with('success', 'কুরিয়ার সার্ভিস সেটিংস সফলভাবে আপডেট হয়েছে।');
+    }
 }
