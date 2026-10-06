@@ -83,6 +83,7 @@ class HomeController extends Controller
             'thumbnail_url' => $product->thumbnail_url,
             'gallery_urls' => $product->gallery_urls,
             'video_url' => $product->video_url,
+            'card_video_url' => $product->card_video_url,
             'in_stock' => $product->in_stock,
             'stock_quantity' => $product->stock_quantity,
             'sold_count' => $product->sold_count ?? 0,

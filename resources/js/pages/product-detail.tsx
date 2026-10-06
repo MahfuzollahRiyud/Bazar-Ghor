@@ -33,6 +33,8 @@ interface Product {
     images?: string[];
     review_image_urls?: string[];
     video_url?: string | null;
+    card_video_url?: string | null;
+    show_card_video_on_detail?: boolean;
     has_variants: boolean;
     stock_quantity: number;
     sold_count?: number;
@@ -124,7 +126,14 @@ export default function ProductDetail({ product, related }: Props) {
         }
     };
 
-    const embedVideoUrl = getYouTubeEmbedUrl(product.video_url);
+    const detailVideoEmbed = getYouTubeEmbedUrl(product.video_url);
+    const cardVideoEmbed = product.show_card_video_on_detail
+        ? getYouTubeEmbedUrl(product.card_video_url)
+        : null;
+    const shouldShowCardVideo = Boolean(
+        cardVideoEmbed &&
+        (!detailVideoEmbed || product.card_video_url !== product.video_url)
+    );
 
     const allImages = [
         ...(product.thumbnail_url ? [product.thumbnail_url] : []),
@@ -658,23 +667,58 @@ export default function ProductDetail({ product, related }: Props) {
                 )}
 
                 {/* Video Preview */}
-                {embedVideoUrl && (
+                {(detailVideoEmbed || shouldShowCardVideo) && (
                     <div className="mt-12 rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
                         <h2 className="mb-4 text-xl font-bold text-gray-800 flex items-center gap-2 border-b pb-2">
                             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600">
                                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                             </span>
-                            ভিডিও রিভিউ ও আনবক্সিং
+                            {language === 'bn' ? 'ভিডিও রিভিউ ও ডেমো' : 'Video Review & Demo'}
                         </h2>
-                        <div className="overflow-hidden rounded-xl bg-black aspect-video max-w-3xl shadow-sm">
-                            <iframe
-                                src={embedVideoUrl}
-                                title={`${product.name} Video Preview`}
-                                className="w-full h-full border-0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                allowFullScreen
-                            />
-                        </div>
+                        {detailVideoEmbed && shouldShowCardVideo ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                                        {language === 'bn' ? 'বিস্তারিত ভিডিও রিভিউ' : 'Detailed Review Video'}
+                                    </h3>
+                                    <div className="overflow-hidden rounded-xl bg-black aspect-video shadow-sm">
+                                        <iframe
+                                            src={detailVideoEmbed}
+                                            title={`${product.name} Detailed Video Review`}
+                                            className="w-full h-full border-0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-[#2d6a27]"></span>
+                                        {language === 'bn' ? 'প্রোডাক্ট প্রিভিউ / শর্ট ভিডিও' : 'Product Preview Video'}
+                                    </h3>
+                                    <div className="overflow-hidden rounded-xl bg-black aspect-video shadow-sm">
+                                        <iframe
+                                            src={cardVideoEmbed!}
+                                            title={`${product.name} Preview Video`}
+                                            className="w-full h-full border-0"
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                            allowFullScreen
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="overflow-hidden rounded-xl bg-black aspect-video max-w-3xl shadow-sm">
+                                <iframe
+                                    src={(detailVideoEmbed || cardVideoEmbed)!}
+                                    title={`${product.name} Video Preview`}
+                                    className="w-full h-full border-0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                />
+                            </div>
+                        )}
                     </div>
                 )}
 

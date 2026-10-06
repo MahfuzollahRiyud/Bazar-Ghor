@@ -25,6 +25,7 @@ interface Product {
     thumbnail_url?: string | null;
     gallery_urls?: string[];
     video_url?: string | null;
+    card_video_url?: string | null;
     in_stock: boolean;
     stock_quantity?: number;
     sold_count?: number;
@@ -81,7 +82,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             : activeIdx % (images.length || 1);
 
     const currentImage = images[displayedIndex] || product.thumbnail_url;
-    const embedVideoUrl = getEmbedVideoUrl(product.video_url);
+    const cardVideo = product.card_video_url || product.video_url;
+    const embedVideoUrl = getEmbedVideoUrl(cardVideo);
 
     const handleCycleGallery = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -219,7 +221,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                             )}
 
                             {/* Video Play Button Badge */}
-                            {product.video_url && (
+                            {cardVideo && (
                                 <button
                                     type="button"
                                     onClick={handlePlayVideo}

@@ -25,6 +25,8 @@ class Product extends Model
         'images',
         'review_images',
         'video_url',
+        'card_video_url',
+        'show_card_video_on_detail',
         'has_variants',
         'stock_quantity',
         'sold_count',
@@ -45,6 +47,7 @@ class Product extends Model
         'is_active' => 'boolean',
         'show_stock_on_card' => 'boolean',
         'sold_count' => 'integer',
+        'show_card_video_on_detail' => 'boolean',
     ];
 
     public function category(): BelongsTo

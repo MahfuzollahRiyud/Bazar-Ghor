@@ -42,6 +42,8 @@ interface ProductData {
     sold_count?: number;
     show_stock_on_card?: boolean;
     video_url?: string | null;
+    card_video_url?: string | null;
+    show_card_video_on_detail?: boolean;
     has_variants: boolean;
     is_featured: boolean;
     is_active: boolean;
@@ -82,6 +84,8 @@ export default function ProductEdit({ product, categories }: Props) {
         sold_count: String(product.sold_count ?? 0),
         show_stock_on_card: Boolean(product.show_stock_on_card),
         video_url: product.video_url ?? '',
+        card_video_url: product.card_video_url ?? '',
+        show_card_video_on_detail: Boolean(product.show_card_video_on_detail),
         has_variants: product.has_variants,
         is_featured: product.is_featured,
         is_active: product.is_active,
@@ -246,6 +250,8 @@ export default function ProductEdit({ product, categories }: Props) {
         data.append('sold_count', String(form.sold_count || 0));
         data.append('show_stock_on_card', form.show_stock_on_card ? '1' : '0');
         if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
+        if (form.card_video_url.trim()) data.append('card_video_url', form.card_video_url.trim());
+        data.append('show_card_video_on_detail', form.show_card_video_on_detail ? '1' : '0');
         data.append('has_variants', form.has_variants ? '1' : '0');
         data.append('is_featured', form.is_featured ? '1' : '0');
         data.append('is_active', form.is_active ? '1' : '0');
@@ -646,25 +652,75 @@ export default function ProductEdit({ product, categories }: Props) {
                                 </div>
                             </div>
 
-                            {/* YouTube Video URL */}
-                            <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100">
-                                <h2 className="mb-2 font-bold text-gray-800 flex items-center gap-2">
-                                    <Film size={18} className="text-[#2d6a27]" />
-                                    {language === 'bn' ? 'ভিডিও প্রিভিউ লিংক (ঐচ্ছিক)' : 'Video Preview URL (Optional)'}
-                                </h2>
-                                <p className="text-xs text-gray-500 mb-3">
-                                    {language === 'bn'
-                                        ? 'পণ্যের ইউটিউব রিভিউ বা আনবক্সিং ভিডিও লিংক দিন (YouTube / Shorts)'
-                                        : 'Link to a YouTube review or showcase video (YouTube / Shorts)'}
-                                </p>
-                                <input
-                                    type="url"
-                                    name="video_url"
-                                    value={form.video_url}
-                                    onChange={handleChange}
-                                    className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
-                                    placeholder="https://www.youtube.com/watch?v=..."
-                                />
+                            {/* Video Settings */}
+                            <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-4">
+                                <div>
+                                    <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                                        <Film size={18} className="text-[#2d6a27]" />
+                                        {language === 'bn' ? 'ভিডিও সেটিংস (ঐচ্ছিক)' : 'Video Settings (Optional)'}
+                                    </h2>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {language === 'bn'
+                                            ? 'কার্ড প্রিভিউ এবং সিঙ্গেল প্রোডাক্ট পেইজের জন্য আলাদা ভিডিও লিংক যুক্ত করতে পারেন।'
+                                            : 'Add separate video links for product card and single product page.'}
+                                    </p>
+                                </div>
+
+                                {/* Product Card Video */}
+                                <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4 space-y-2">
+                                    <label className="block text-xs font-semibold text-gray-700">
+                                        {language === 'bn' ? '১. প্রোডাক্ট কার্ড ভিডিও লিংক' : '1. Product Card Video URL'}
+                                    </label>
+                                    <p className="text-[11px] text-gray-500">
+                                        {language === 'bn'
+                                            ? 'হোমপেইজ বা শপপেইজে প্রোডাক্ট কার্ডের ওপর এই ভিডিওটি চলবে (YouTube / Shorts / রিল)'
+                                            : 'Plays on the product card in shop/home page (YouTube / Shorts / Reels)'}
+                                    </p>
+                                    <input
+                                        type="url"
+                                        name="card_video_url"
+                                        value={form.card_video_url}
+                                        onChange={handleChange}
+                                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                        placeholder="https://www.youtube.com/shorts/... বা ভিডিও লিংক"
+                                    />
+
+                                    {/* Toggle checkbox to show card video on detail page also */}
+                                    <label className="flex items-center gap-2.5 pt-1.5 cursor-pointer select-none">
+                                        <input
+                                            type="checkbox"
+                                            name="show_card_video_on_detail"
+                                            checked={form.show_card_video_on_detail}
+                                            onChange={handleChange}
+                                            className="h-4 w-4 rounded accent-[#2d6a27]"
+                                        />
+                                        <span className="text-xs font-medium text-gray-700">
+                                            {language === 'bn'
+                                                ? 'কার্ডের এই ভিডিওটি সিঙ্গেল প্রোডাক্ট পেইজেও দেখান'
+                                                : 'Also show this card video on the single product page'}
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {/* Single Product Page Video */}
+                                <div className="rounded-xl border border-gray-100 bg-gray-50/60 p-4 space-y-2">
+                                    <label className="block text-xs font-semibold text-gray-700">
+                                        {language === 'bn' ? '২. সিঙ্গেল প্রোডাক্ট পেইজ ভিডিও লিংক' : '2. Single Product Page Video URL'}
+                                    </label>
+                                    <p className="text-[11px] text-gray-500">
+                                        {language === 'bn'
+                                            ? 'প্রোডাক্টের সিঙ্গেল ডিটেইল পেইজে মূল রিভিউ বা আনবক্সিং ভিডিও হিসেবে দেখাবে।'
+                                            : 'Detailed product review or unboxing video on single product page.'}
+                                    </p>
+                                    <input
+                                        type="url"
+                                        name="video_url"
+                                        value={form.video_url}
+                                        onChange={handleChange}
+                                        className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                        placeholder="https://www.youtube.com/watch?v=..."
+                                    />
+                                </div>
                             </div>
 
                             {/* Variants */}
