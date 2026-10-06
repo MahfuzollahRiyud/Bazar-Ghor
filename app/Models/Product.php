@@ -50,6 +50,10 @@ class Product extends Model
         'show_card_video_on_detail' => 'boolean',
     ];
 
+    protected $appends = [
+        'thumbnail_url',
+    ];
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);

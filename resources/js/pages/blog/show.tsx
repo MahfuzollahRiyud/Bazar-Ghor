@@ -45,6 +45,7 @@ interface ProductItem {
     price: number;
     sale_price?: number | null;
     thumbnail?: string | null;
+    thumbnail_url?: string | null;
 }
 
 interface Props {
@@ -323,17 +324,26 @@ export default function BlogShow({ post, recentPosts, recommendedProducts }: Pro
                                                 className="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-50 transition group"
                                             >
                                                 <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200/60">
-                                                    {prod.thumbnail ? (
-                                                        <img
-                                                            src={prod.thumbnail}
-                                                            alt={prod.name}
-                                                            className="h-full w-full object-cover group-hover:scale-105 transition-transform"
-                                                        />
-                                                    ) : (
-                                                        <div className="flex h-full w-full items-center justify-center text-gray-400">
-                                                            <ShoppingBag size={18} />
-                                                        </div>
-                                                    )}
+                                                    {(() => {
+                                                        const rawThumb = prod.thumbnail_url || prod.thumbnail;
+                                                        const thumbSrc = rawThumb
+                                                            ? (rawThumb.startsWith('http') || rawThumb.startsWith('/')
+                                                                ? rawThumb
+                                                                : `/storage/${rawThumb.replace(/^\//, '')}`)
+                                                            : null;
+
+                                                        return thumbSrc ? (
+                                                            <img
+                                                                src={thumbSrc}
+                                                                alt={prod.name}
+                                                                className="h-full w-full object-cover group-hover:scale-105 transition-transform"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                                                <ShoppingBag size={18} />
+                                                            </div>
+                                                        );
+                                                    })()}
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <h4 className="text-xs font-semibold text-gray-900 group-hover:text-[#2d6a27] transition-colors truncate">

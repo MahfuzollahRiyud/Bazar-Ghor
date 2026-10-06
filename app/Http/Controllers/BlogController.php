@@ -79,7 +79,25 @@ class BlogController extends Controller
             ->orderBy('is_featured', 'desc')
             ->latest('id')
             ->take(4)
-            ->get();
+            ->get()
+            ->map(function ($p) {
+                $thumbUrl = $p->thumbnail_url;
+                if (!$thumbUrl && $p->thumbnail) {
+                    $thumbUrl = str_starts_with($p->thumbnail, 'http')
+                        ? $p->thumbnail
+                        : '/storage/' . ltrim($p->thumbnail, '/');
+                }
+
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'slug' => $p->slug,
+                    'price' => (float) $p->price,
+                    'sale_price' => $p->sale_price ? (float) $p->sale_price : null,
+                    'thumbnail' => $thumbUrl,
+                    'thumbnail_url' => $thumbUrl,
+                ];
+            });
 
         return Inertia::render('blog/show', [
             'post' => $post,
