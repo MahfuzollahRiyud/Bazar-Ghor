@@ -31,6 +31,8 @@ interface Product {
     price: number;
     sale_price?: number | null;
     stock_quantity: number;
+    sold_count?: number;
+    show_stock_on_card?: boolean;
     thumbnail_url?: string | null;
     is_active: boolean;
     is_featured: boolean;
@@ -601,21 +603,28 @@ export default function ProductsIndex({
                                                     )}
                                                 </td>
 
-                                                {/* Stock Status */}
+                                                {/* Stock Status & Sold */}
                                                 <td className="px-4 py-3">
-                                                    {isInStock ? (
-                                                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
-                                                            <span className="size-1.5 rounded-full bg-emerald-500" />
-                                                            {product.has_variants
-                                                                ? t.inStock
-                                                                : `${language === 'en' ? 'Stock' : 'স্টক'}: ${product.stock_quantity}`}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700 border border-red-200">
-                                                            <span className="size-1.5 rounded-full bg-red-500" />
-                                                            {t.outOfStock}
-                                                        </span>
-                                                    )}
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        {isInStock ? (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200">
+                                                                <span className="size-1.5 rounded-full bg-emerald-500" />
+                                                                {product.has_variants
+                                                                    ? t.inStock
+                                                                    : `${language === 'en' ? 'Stock' : 'স্টক'}: ${product.stock_quantity}`}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-700 border border-red-200">
+                                                                <span className="size-1.5 rounded-full bg-red-500" />
+                                                                {t.outOfStock}
+                                                            </span>
+                                                        )}
+                                                        {typeof product.sold_count === 'number' && product.sold_count > 0 && (
+                                                            <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                                                                {product.sold_count} {language === 'bn' ? 'বিক্রি' : 'sold'}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 {/* Status (Active / Inactive) */}

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -105,7 +107,52 @@ class OrderController extends Controller
             'status' => 'required|in:pending,confirmed,processing,shipped,delivered,cancelled',
         ]);
 
-        $order->update(['status' => $request->status]);
+        $oldStatus = $order->status;
+        $newStatus = $request->status;
+
+        if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+            // Restore inventory and decrease sold count
+            $order->loadMissing('items');
+            foreach ($order->items as $item) {
+                $qty = (int) $item->quantity;
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $product->decrement('sold_count', min($qty, (int) $product->sold_count));
+                    if (!$product->has_variants) {
+                        $product->increment('stock_quantity', $qty);
+                    }
+                }
+                if ($item->product_variant_id) {
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant) {
+                        $variant->increment('stock_quantity', $qty);
+                    }
+                }
+            }
+        } elseif ($newStatus !== 'cancelled' && $oldStatus === 'cancelled') {
+            // Re-deduct inventory and increase sold count
+            $order->loadMissing('items');
+            foreach ($order->items as $item) {
+                $qty = (int) $item->quantity;
+                $product = Product::find($item->product_id);
+                if ($product) {
+                    $product->increment('sold_count', $qty);
+                    if (!$product->has_variants) {
+                        $currentStock = (int) $product->stock_quantity;
+                        $product->decrement('stock_quantity', min($qty, $currentStock));
+                    }
+                }
+                if ($item->product_variant_id) {
+                    $variant = ProductVariant::find($item->product_variant_id);
+                    if ($variant) {
+                        $currentVStock = (int) $variant->stock_quantity;
+                        $variant->decrement('stock_quantity', min($qty, $currentVStock));
+                    }
+                }
+            }
+        }
+
+        $order->update(['status' => $newStatus]);
 
         return back()->with('success', 'অর্ডার স্ট্যাটাস আপডেট হয়েছে।');
     }

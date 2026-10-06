@@ -26,6 +26,9 @@ interface Product {
     gallery_urls?: string[];
     video_url?: string | null;
     in_stock: boolean;
+    stock_quantity?: number;
+    sold_count?: number;
+    show_stock_on_card?: boolean;
     has_variants: boolean;
     short_description?: string | null;
     is_featured?: boolean;
@@ -265,17 +268,38 @@ export default function ProductCard({ product }: ProductCardProps) {
                         <p className="mb-2 line-clamp-1 text-xs text-gray-500">{product.short_description}</p>
                     )}
 
-                    {/* Pricing */}
-                    <div className="flex items-baseline gap-2 mb-3">
-                        <span className="text-base sm:text-lg font-bold text-[#2d6a27]">
-                            ৳{Number(product.effective_price).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}
-                        </span>
-                        {product.is_on_sale && product.sale_price && (
-                            <span className="text-xs text-gray-400 line-through">
-                                ৳{Number(product.price).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}
+                    {/* Pricing & Sold Count */}
+                    <div className="flex items-baseline justify-between gap-1 mb-2">
+                        <div className="flex items-baseline gap-1.5 flex-wrap">
+                            <span className="text-base sm:text-lg font-bold text-[#2d6a27]">
+                                ৳{Number(product.effective_price).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}
+                            </span>
+                            {product.is_on_sale && product.sale_price && (
+                                <span className="text-xs text-gray-400 line-through">
+                                    ৳{Number(product.price).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')}
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Daraz-Style Sold Count */}
+                        {typeof product.sold_count === 'number' && product.sold_count > 0 && (
+                            <span className="text-[11px] font-medium text-gray-500 whitespace-nowrap bg-gray-100/90 px-2 py-0.5 rounded-md border border-gray-200/50">
+                                {Number(product.sold_count).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')} {language === 'bn' ? 'বিক্রি' : 'sold'}
                             </span>
                         )}
                     </div>
+
+                    {/* In-Stock Quantity Badge (if show_stock_on_card is checked) */}
+                    {product.show_stock_on_card && product.in_stock && typeof product.stock_quantity === 'number' && product.stock_quantity > 0 && (
+                        <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-800 bg-emerald-50/90 px-2 py-0.5 rounded-md border border-emerald-100">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>
+                                {language === 'bn' 
+                                    ? `স্টকে আছে: ${Number(product.stock_quantity).toLocaleString('bn-BD')} টি`
+                                    : `In Stock: ${product.stock_quantity} pcs`}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </Link>
 

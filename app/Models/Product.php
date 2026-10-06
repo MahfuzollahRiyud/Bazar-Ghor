@@ -27,6 +27,8 @@ class Product extends Model
         'video_url',
         'has_variants',
         'stock_quantity',
+        'sold_count',
+        'show_stock_on_card',
         'is_featured',
         'is_active',
         'sort_order',
@@ -41,6 +43,8 @@ class Product extends Model
         'has_variants' => 'boolean',
         'is_featured' => 'boolean',
         'is_active' => 'boolean',
+        'show_stock_on_card' => 'boolean',
+        'sold_count' => 'integer',
     ];
 
     public function category(): BelongsTo

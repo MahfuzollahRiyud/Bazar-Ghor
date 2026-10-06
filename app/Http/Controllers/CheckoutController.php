@@ -258,6 +258,24 @@ class CheckoutController extends Controller
 
             foreach ($orderItems as $item) {
                 $order->items()->create($item);
+
+                $qty = (int) $item['quantity'];
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $product->increment('sold_count', $qty);
+                    if (!$product->has_variants) {
+                        $currentStock = (int) $product->stock_quantity;
+                        $product->decrement('stock_quantity', min($qty, $currentStock));
+                    }
+                }
+
+                if (!empty($item['product_variant_id'])) {
+                    $variant = ProductVariant::find($item['product_variant_id']);
+                    if ($variant) {
+                        $currentVStock = (int) $variant->stock_quantity;
+                        $variant->decrement('stock_quantity', min($qty, $currentVStock));
+                    }
+                }
             }
 
             $request->session()->put('last_placed_order_id', $order->id);

@@ -82,6 +82,9 @@ class ShopController extends Controller
             'gallery_urls' => $product->gallery_urls,
             'video_url' => $product->video_url,
             'in_stock' => $product->in_stock,
+            'stock_quantity' => $product->stock_quantity,
+            'sold_count' => $product->sold_count ?? 0,
+            'show_stock_on_card' => (bool) $product->show_stock_on_card,
             'has_variants' => $product->has_variants,
             'category' => $product->category ? [
                 'id' => $product->category->id,

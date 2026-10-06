@@ -41,6 +41,9 @@ class ProductController extends Controller
                 'gallery_urls' => $p->gallery_urls,
                 'video_url' => $p->video_url,
                 'in_stock' => $p->in_stock,
+                'stock_quantity' => $p->stock_quantity,
+                'sold_count' => $p->sold_count ?? 0,
+                'show_stock_on_card' => (bool) $p->show_stock_on_card,
                 'has_variants' => $p->has_variants,
             ]);
 
@@ -61,6 +64,8 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'has_variants' => $product->has_variants,
                 'stock_quantity' => $product->stock_quantity,
+                'sold_count' => $product->sold_count ?? 0,
+                'show_stock_on_card' => (bool) $product->show_stock_on_card,
                 'in_stock' => $product->in_stock,
                 'sku' => $product->sku,
                 'category' => $product->category ? [

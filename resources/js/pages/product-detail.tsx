@@ -3,7 +3,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatRichText } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Maximize2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Star, Tag, Truck, X, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Flame, Maximize2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Star, Tag, Truck, X, Zap } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -35,6 +35,8 @@ interface Product {
     video_url?: string | null;
     has_variants: boolean;
     stock_quantity: number;
+    sold_count?: number;
+    show_stock_on_card?: boolean;
     in_stock: boolean;
     sku?: string | null;
     category?: { id: number; name: string; slug: string } | null;
@@ -345,10 +347,24 @@ export default function ProductDetail({ product, related }: Props) {
                             </div>
                         )}
 
-                        {/* Stock */}
-                        <div className={`mb-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
-                            <span className={`h-2 w-2 rounded-full ${inStock ? 'bg-green-500' : 'bg-red-500'}`} />
-                            {inStock ? t.inStock : t.outOfStock}
+                        {/* Stock & Sold Status */}
+                        <div className="mb-4 flex items-center gap-3 flex-wrap">
+                            <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ${inStock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}`}>
+                                <span className={`h-2 w-2 rounded-full ${inStock ? 'bg-green-500' : 'bg-red-500'}`} />
+                                <span>
+                                    {inStock ? t.inStock : t.outOfStock}
+                                    {inStock && maxQty > 0 && ` (${Number(maxQty).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')} ${language === 'bn' ? 'টি অবশিষ্ট' : 'available'})`}
+                                </span>
+                            </div>
+
+                            {typeof product.sold_count === 'number' && product.sold_count > 0 && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                    <Flame size={14} className="text-amber-600 fill-amber-500" />
+                                    <span>
+                                        {Number(product.sold_count).toLocaleString(language === 'bn' ? 'bn-BD' : 'en-US')} {language === 'bn' ? 'টি বিক্রি হয়েছে' : 'sold'}
+                                    </span>
+                                </span>
+                            )}
                         </div>
 
                         {/* Quantity */}

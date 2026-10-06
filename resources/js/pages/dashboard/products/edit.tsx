@@ -39,6 +39,8 @@ interface ProductData {
     sale_price?: number | null;
     cost_price?: number | null;
     stock_quantity: number;
+    sold_count?: number;
+    show_stock_on_card?: boolean;
     video_url?: string | null;
     has_variants: boolean;
     is_featured: boolean;
@@ -77,6 +79,8 @@ export default function ProductEdit({ product, categories }: Props) {
         sale_price: product.sale_price ? String(product.sale_price) : '',
         cost_price: product.cost_price ? String(product.cost_price) : '',
         stock_quantity: String(product.stock_quantity),
+        sold_count: String(product.sold_count ?? 0),
+        show_stock_on_card: Boolean(product.show_stock_on_card),
         video_url: product.video_url ?? '',
         has_variants: product.has_variants,
         is_featured: product.is_featured,
@@ -239,6 +243,8 @@ export default function ProductEdit({ product, categories }: Props) {
         if (form.sale_price) data.append('sale_price', String(form.sale_price));
         if (form.cost_price) data.append('cost_price', String(form.cost_price));
         data.append('stock_quantity', String(form.has_variants ? 0 : form.stock_quantity || 0));
+        data.append('sold_count', String(form.sold_count || 0));
+        data.append('show_stock_on_card', form.show_stock_on_card ? '1' : '0');
         if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
         data.append('has_variants', form.has_variants ? '1' : '0');
         data.append('is_featured', form.is_featured ? '1' : '0');
@@ -510,48 +516,133 @@ export default function ProductEdit({ product, categories }: Props) {
                                     {language === 'bn' ? 'মূল্য ও স্টক' : 'Pricing & Inventory'}
                                 </h2>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    {[
-                                        { name: 'price', label: `${t.regularPrice} (৳) *`, placeholder: '0' },
-                                        {
-                                            name: 'sale_price',
-                                            label: `${t.salePrice} (৳)`,
-                                            placeholder: language === 'bn' ? 'ছাড়ের দাম' : 'Discount price',
-                                        },
-                                        {
-                                            name: 'cost_price',
-                                            label: language === 'bn' ? 'কেনা দাম / হোলসেল প্রাইস (৳) [এডমিন]' : 'Cost / Wholesale Price (৳) [Admin]',
-                                            placeholder: '0',
-                                        },
-                                        { name: 'sku', label: `${t.sku} (${language === 'bn' ? 'ঐচ্ছিক' : 'Optional'})`, placeholder: 'PRD-001' },
-                                        ...(!form.has_variants
-                                            ? [
-                                                  {
-                                                      name: 'stock_quantity',
-                                                      label: t.stockQuantity,
-                                                      placeholder: '0',
-                                                  },
-                                              ]
-                                            : []),
-                                    ].map((f) => (
-                                        <div key={f.name} className={f.name === 'stock_quantity' ? 'sm:col-span-2' : ''}>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.regularPrice} (৳) *
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="price"
+                                            value={form.price}
+                                            onChange={handleChange}
+                                            className={`w-full rounded-xl border px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none ${
+                                                errors.price ? 'border-red-400' : 'border-gray-200'
+                                            }`}
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                        {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.salePrice} (৳)
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="sale_price"
+                                            value={form.sale_price}
+                                            onChange={handleChange}
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                            placeholder={language === 'bn' ? 'ছাড়ের দাম' : 'Discounted price'}
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {language === 'bn' ? 'কেনা দাম / হোলসেল প্রাইস (৳)' : 'Cost / Wholesale Price (৳)'}
+                                            <span className="text-[11px] text-amber-600 font-normal ml-1.5">
+                                                ({language === 'bn' ? 'এডমিন মাত্র - লাভ হিসাবের জন্য' : 'Admin only'})
+                                            </span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="cost_price"
+                                            value={form.cost_price}
+                                            onChange={handleChange}
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none bg-amber-50/20"
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {t.sku} ({language === 'bn' ? 'ঐচ্ছিক' : 'Optional'})
+                                        </label>
+                                        <input
+                                            name="sku"
+                                            value={form.sku}
+                                            onChange={handleChange}
+                                            type="text"
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none uppercase"
+                                            placeholder="PRD-001"
+                                        />
+                                    </div>
+
+                                    {!form.has_variants ? (
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                {f.label}
+                                                {t.stockQuantity}
                                             </label>
                                             <input
-                                                name={f.name}
-                                                value={(form as any)[f.name]}
+                                                type="number"
+                                                name="stock_quantity"
+                                                value={form.stock_quantity}
                                                 onChange={handleChange}
-                                                type={f.name === 'sku' ? 'text' : 'number'}
-                                                className={`w-full rounded-xl border px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none ${
-                                                    f.name === 'cost_price' ? 'border-gray-200 bg-amber-50/20' : 'border-gray-200'
-                                                }`}
-                                                placeholder={f.placeholder}
+                                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                                placeholder="0"
+                                                min="0"
                                             />
-                                            {errors[f.name] && (
-                                                <p className="mt-1 text-xs text-red-500">{errors[f.name]}</p>
-                                            )}
+                                            <p className="mt-1 text-[11px] text-gray-500">
+                                                {language === 'bn' ? 'অর্ডারে এই সংখ্যা থেকে স্বয়ংক্রিয়ভাবে কমে যাবে।' : 'Auto decrements with every order.'}
+                                            </p>
                                         </div>
-                                    ))}
+                                    ) : null}
+
+                                    <div className={form.has_variants ? 'sm:col-span-2' : ''}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {language === 'bn' ? 'বিক্রির সংখ্যা (Sold Count)' : 'Initial Sold Count'}
+                                            <span className="text-[11px] text-amber-600 font-normal ml-1.5">
+                                                ({language === 'bn' ? 'দারাজ স্টাইল' : 'Daraz style'})
+                                            </span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="sold_count"
+                                            value={form.sold_count}
+                                            onChange={handleChange}
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                        <p className="mt-1 text-[11px] text-gray-500">
+                                            {language === 'bn'
+                                                ? 'প্রারম্ভিক বিক্রয় সংখ্যা (যেমন: ১৫)। ওয়েবসাইটে প্রতিবার অর্ডারে এটি ১টি করে বৃদ্ধি পাবে।'
+                                                : 'Starting sold count (e.g. 15). Automatically increases on every website order.'}
+                                        </p>
+                                    </div>
+
+                                    {/* Show Stock on Card Toggle */}
+                                    <div className="sm:col-span-2 pt-3 mt-1 border-t border-gray-100">
+                                        <label className="flex items-start gap-3 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                name="show_stock_on_card"
+                                                checked={form.show_stock_on_card}
+                                                onChange={handleChange}
+                                                className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2d6a27] focus:ring-[#2d6a27]"
+                                            />
+                                            <div>
+                                                <span className="text-sm font-semibold text-gray-800 group-hover:text-[#2d6a27] transition">
+                                                    {language === 'bn' ? 'প্রোডাক্ট কার্ডে ইন-স্টক সংখ্যা প্রদর্শন করুন' : 'Show In-Stock quantity on Product Card'}
+                                                </span>
+                                                <p className="text-xs text-gray-500 mt-0.5">
+                                                    {language === 'bn'
+                                                        ? 'টিক দেওয়া থাকলে হোম ও শপ পেজের প্রোডাক্ট কার্ডে "ইন স্টক: X টি" ব্যাজ দেখাবে। আনচেক থাকলে দেখাবে না।'
+                                                        : 'If checked, shows "In Stock: X pcs" badge on homepage & shop product cards.'}
+                                                </p>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 

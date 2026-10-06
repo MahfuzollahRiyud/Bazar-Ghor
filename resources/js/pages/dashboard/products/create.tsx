@@ -57,6 +57,8 @@ export default function ProductCreate({ categories }: Props) {
         sale_price: '',
         cost_price: '',
         stock_quantity: '',
+        sold_count: '0',
+        show_stock_on_card: false,
         video_url: '',
         has_variants: false,
         is_featured: false,
@@ -246,6 +248,8 @@ export default function ProductCreate({ categories }: Props) {
         if (form.sale_price) data.append('sale_price', String(form.sale_price));
         if (form.cost_price) data.append('cost_price', String(form.cost_price));
         data.append('stock_quantity', String(form.has_variants ? 0 : form.stock_quantity || 0));
+        data.append('sold_count', String(form.sold_count || 0));
+        data.append('show_stock_on_card', form.show_stock_on_card ? '1' : '0');
         if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
         data.append('has_variants', form.has_variants ? '1' : '0');
         data.append('is_featured', form.is_featured ? '1' : '0');
@@ -561,8 +565,8 @@ export default function ProductCreate({ categories }: Props) {
                                             placeholder="PRD-001"
                                         />
                                     </div>
-                                    {!form.has_variants && (
-                                        <div className="sm:col-span-2">
+                                    {!form.has_variants ? (
+                                        <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                                 {t.stockQuantity}
                                             </label>
@@ -575,8 +579,57 @@ export default function ProductCreate({ categories }: Props) {
                                                 placeholder="0"
                                                 min="0"
                                             />
+                                            <p className="mt-1 text-[11px] text-gray-500">
+                                                {language === 'bn' ? 'অর্ডারে এই সংখ্যা থেকে স্বয়ংক্রিয়ভাবে কমে যাবে।' : 'Auto decrements with every order.'}
+                                            </p>
                                         </div>
-                                    )}
+                                    ) : null}
+
+                                    <div className={form.has_variants ? 'sm:col-span-2' : ''}>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            {language === 'bn' ? 'বিক্রির সংখ্যা (Sold Count)' : 'Initial Sold Count'}
+                                            <span className="text-[11px] text-amber-600 font-normal ml-1.5">
+                                                ({language === 'bn' ? 'দারাজ স্টাইল' : 'Daraz style'})
+                                            </span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            name="sold_count"
+                                            value={form.sold_count}
+                                            onChange={handleChange}
+                                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-[#2d6a27] focus:outline-none"
+                                            placeholder="0"
+                                            min="0"
+                                        />
+                                        <p className="mt-1 text-[11px] text-gray-500">
+                                            {language === 'bn'
+                                                ? 'প্রারম্ভিক বিক্রয় সংখ্যা (যেমন: ১৫)। ওয়েবসাইটে প্রতিবার অর্ডারে এটি ১টি করে বৃদ্ধি পাবে।'
+                                                : 'Starting sold count (e.g. 15). Automatically increases on every website order.'}
+                                        </p>
+                                    </div>
+
+                                    {/* Show Stock on Card Toggle */}
+                                    <div className="sm:col-span-2 pt-3 mt-1 border-t border-gray-100">
+                                        <label className="flex items-start gap-3 cursor-pointer group">
+                                            <input
+                                                type="checkbox"
+                                                name="show_stock_on_card"
+                                                checked={form.show_stock_on_card}
+                                                onChange={handleChange}
+                                                className="mt-1 h-4 w-4 rounded border-gray-300 text-[#2d6a27] focus:ring-[#2d6a27]"
+                                            />
+                                            <div>
+                                                <span className="text-sm font-semibold text-gray-800 group-hover:text-[#2d6a27] transition">
+                                                    {language === 'bn' ? 'প্রোডাক্ট কার্ডে ইন-স্টক সংখ্যা প্রদর্শন করুন' : 'Show In-Stock quantity on Product Card'}
+                                                </span>
+                                                <p className="text-xs text-gray-500 mt-0.5">
+                                                    {language === 'bn'
+                                                        ? 'টিক দেওয়া থাকলে হোম ও শপ পেজের প্রোডাক্ট কার্ডে "ইন স্টক: X টি" ব্যাজ দেখাবে। আনচেক থাকলে দেখাবে না।'
+                                                        : 'If checked, shows "In Stock: X pcs" badge on homepage & shop product cards.'}
+                                                </p>
+                                            </div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
 
