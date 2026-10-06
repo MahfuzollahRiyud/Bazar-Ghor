@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'payment/*',
+            'api/webhooks/*',
+            'webhooks/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

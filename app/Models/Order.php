@@ -28,6 +28,10 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'transaction_id',
+        'courier_name',
+        'consignment_id',
+        'tracking_code',
+        'courier_status',
         'notes',
     ];
 

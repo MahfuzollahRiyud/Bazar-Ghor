@@ -8,6 +8,8 @@ import {
     Loader2,
     RotateCcw,
     Search,
+    Truck,
+    ExternalLink,
     X,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -27,6 +29,10 @@ interface Order {
     status: string;
     status_label: string;
     status_color: string;
+    courier_name?: string | null;
+    consignment_id?: string | null;
+    tracking_code?: string | null;
+    courier_status?: string | null;
     items_count: number;
     created_at: string;
 }
@@ -74,6 +80,7 @@ interface Props {
     filters: Filters;
     filteredSummary: FilteredSummary;
     statusCounts: StatusCounts;
+    steadfastConfigured?: boolean;
 }
 
 const STATUS_COLOR_MAP: Record<string, string> = {
@@ -85,13 +92,15 @@ const STATUS_COLOR_MAP: Record<string, string> = {
     cancelled: 'bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-400',
 };
 
-export default function OrdersIndex({ orders, categories = [], filters, filteredSummary = { count: 0, total_amount: 0 }, statusCounts }: Props) {
+export default function OrdersIndex({ orders, categories = [], filters, filteredSummary = { count: 0, total_amount: 0 }, statusCounts, steadfastConfigured = false }: Props) {
     const { t, language } = useAdminLanguage();
     const [search, setSearch] = useState(filters.search ?? '');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [bulkStatus, setBulkStatus] = useState<string>('');
     const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
+    const [isBulkSteadfastSubmitting, setIsBulkSteadfastSubmitting] = useState(false);
     const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+    const [steadfastOrderId, setSteadfastOrderId] = useState<number | null>(null);
 
     // Date filter state
     const [datePreset, setDatePreset] = useState(
@@ -214,6 +223,28 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                 toast.error(language === 'en' ? 'Bulk update failed' : 'বাল্ক আপডেট করতে সমস্যা হয়েছে');
             },
             onFinish: () => setIsBulkSubmitting(false),
+        });
+    };
+
+    const handleSendToSteadfast = (orderId: number) => {
+        setSteadfastOrderId(orderId);
+        router.post(`/dashboard/orders/${orderId}/steadfast`, {}, {
+            preserveScroll: true,
+            onFinish: () => setSteadfastOrderId(null),
+        });
+    };
+
+    const handleBulkSteadfast = () => {
+        if (selectedIds.length === 0) return;
+        setIsBulkSteadfastSubmitting(true);
+        router.post('/dashboard/orders/bulk-steadfast', {
+            order_ids: selectedIds,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSelectedIds([]);
+            },
+            onFinish: () => setIsBulkSteadfastSubmitting(false),
         });
     };
 
@@ -429,7 +460,18 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                                 className="flex items-center gap-1.5 rounded-xl bg-[#2d6a27] px-4 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-[#23531f] disabled:opacity-50 transition cursor-pointer"
                             >
                                 {isBulkSubmitting && <Loader2 size={13} className="animate-spin" />}
-                                {language === 'en' ? 'Update Selected' : 'বাল্ক স্ট্যাটাস আপডেট করুন'}
+                                {language === 'en' ? 'Update Selected' : 'বাল্ক স্ট্যাটাস আপডেট'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleBulkSteadfast}
+                                disabled={isBulkSteadfastSubmitting}
+                                className="flex items-center gap-1.5 rounded-xl bg-orange-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-orange-700 disabled:opacity-50 transition cursor-pointer"
+                                title={language === 'en' ? 'Send selected orders to SteadFast Courier' : 'নির্বাচিত অর্ডারগুলো স্টেডফাস্ট কুরিয়ারে বুকিং করুন'}
+                            >
+                                {isBulkSteadfastSubmitting ? <Loader2 size={13} className="animate-spin" /> : <Truck size={13} />}
+                                {language === 'en' ? 'Send to SteadFast' : 'স্টেডফাস্টে পাঠান'}
                             </button>
 
                             <button
@@ -495,8 +537,28 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                                                         className="h-4 w-4 rounded border-gray-300 accent-[#2d6a27] cursor-pointer"
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-gray-900">
-                                                    {order.order_number}
+                                                <td className="px-4 py-3.5">
+                                                    <span className="font-mono text-xs font-bold text-gray-900 block">
+                                                        {order.order_number}
+                                                    </span>
+                                                    {order.tracking_code ? (
+                                                        <a
+                                                            href={`https://steadfast.com.bd/t/${order.tracking_code}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1 mt-1 rounded bg-orange-50 border border-orange-200 px-1.5 py-0.5 text-[10px] font-mono font-bold text-orange-700 hover:bg-orange-100 transition"
+                                                            title={language === 'en' ? `Track: ${order.tracking_code}` : `ট্র্যাক করুন: ${order.tracking_code}`}
+                                                        >
+                                                            <Truck size={10} className="shrink-0 text-orange-600" />
+                                                            <span>{order.tracking_code}</span>
+                                                            <ExternalLink size={9} className="opacity-60" />
+                                                        </a>
+                                                    ) : null}
+                                                    {order.courier_status && (
+                                                        <span className="block text-[10px] text-gray-400 capitalize mt-0.5 font-medium">
+                                                            {order.courier_status.replace(/_/g, ' ')}
+                                                        </span>
+                                                    )}
                                                 </td>
                                                 <td className="px-4 py-3.5">
                                                     <p className="font-semibold text-gray-900 text-xs">{order.customer_name}</p>
@@ -551,7 +613,19 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                                                 <td className="px-4 py-3.5 hidden lg:table-cell text-gray-500 text-xs">
                                                     {order.created_at}
                                                 </td>
-                                                <td className="px-4 py-3.5 text-right">
+                                                <td className="px-4 py-3.5 text-right whitespace-nowrap space-x-1.5">
+                                                    {!order.tracking_code && order.status !== 'cancelled' && order.status !== 'delivered' && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleSendToSteadfast(order.id)}
+                                                            disabled={steadfastOrderId === order.id}
+                                                            title={language === 'en' ? 'Book with SteadFast Courier' : 'স্টেডফাস্ট কুরিয়ারে বুকিং করুন'}
+                                                            className="inline-flex items-center gap-1 rounded-lg bg-orange-50 border border-orange-200 px-2 py-1.5 text-xs font-semibold text-orange-700 hover:bg-orange-600 hover:text-white transition shadow-2xs cursor-pointer disabled:opacity-50"
+                                                        >
+                                                            {steadfastOrderId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Truck size={12} />}
+                                                            <span>{language === 'en' ? 'SteadFast' : 'কুরিয়ার'}</span>
+                                                        </button>
+                                                    )}
                                                     <Link
                                                         href={`/dashboard/orders/${order.id}`}
                                                         className="inline-block rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-[#2d6a27] hover:text-white transition whitespace-nowrap shadow-2xs"

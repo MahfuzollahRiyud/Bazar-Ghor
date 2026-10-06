@@ -11,6 +11,7 @@ import {
     PackageCheck,
     Navigation,
     ShieldCheck,
+    Copy,
 } from 'lucide-react';
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 
@@ -44,6 +45,7 @@ export default function CourierSettings({ couriers }: Props) {
     const [showSteadfastSecret, setShowSteadfastSecret] = useState(false);
     const [showPathaoSecret, setShowPathaoSecret] = useState(false);
     const [showPathaoPassword, setShowPathaoPassword] = useState(false);
+    const [copiedWebhook, setCopiedWebhook] = useState(false);
 
     const { data, setData, post, processing, recentlySuccessful } = useForm({
         steadfast: couriers.steadfast,
@@ -238,6 +240,54 @@ export default function CourierSettings({ couriers }: Props) {
                                         {language === 'en'
                                             ? 'Find your Steadfast API Key & Secret Key in your Steadfast Merchant Portal > Settings > API.'
                                             : 'স্টেডফাস্ট মার্চেন্ট পোর্টালে (portal.packzy.com) লগইন করে Settings > API সেকশন থেকে আপনার API Key ও Secret Key সংগ্রহ করুন।'}
+                                    </div>
+                                </div>
+
+                                {/* Steadfast Webhook URL */}
+                                <div className="rounded-xl border border-dashed border-orange-300 bg-orange-50/40 p-4 space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            {language === 'en' ? 'SteadFast Webhook URL' : 'স্টেডফাস্ট ওয়েবহুক (Webhook) URL'}
+                                        </label>
+                                        <span className="text-[10px] text-gray-500 font-medium">
+                                            Auto Parcel Sync
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-gray-600 leading-relaxed">
+                                        {language === 'en'
+                                            ? 'Paste this URL into SteadFast Merchant Portal > Settings > Webhook to automatically receive live parcel updates (Delivered, Return, Cancelled).'
+                                            : 'স্টেডফাস্ট মার্চেন্ট পোর্টালে (Settings > Webhook) নিচের URL-টি পেস্ট করুন। এর ফলে পার্সেল ডেলিভারি, ক্যানসেল বা রিটার্ন হলে আপনার ড্যাশবোর্ডে স্বয়ংক্রিয়ভাবে স্ট্যাটাস আপডেট হবে।'}
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            readOnly
+                                            value={typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/steadfast` : 'https://bazarghor.com/api/webhooks/steadfast'}
+                                            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-mono text-gray-800 select-all cursor-text"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const url = typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/steadfast` : 'https://bazarghor.com/api/webhooks/steadfast';
+                                                navigator.clipboard.writeText(url);
+                                                setCopiedWebhook(true);
+                                                setTimeout(() => setCopiedWebhook(false), 2000);
+                                            }}
+                                            className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 transition cursor-pointer"
+                                        >
+                                            {copiedWebhook ? (
+                                                <>
+                                                    <Check size={13} />
+                                                    {language === 'en' ? 'Copied' : 'কপি হয়েছে'}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Copy size={13} />
+                                                    {language === 'en' ? 'Copy URL' : 'কপি করুন'}
+                                                </>
+                                            )}
+                                        </button>
                                     </div>
                                 </div>
                             </div>

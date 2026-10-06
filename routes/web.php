@@ -75,6 +75,9 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::get('/orders/{order}', [DashboardOrderController::class, 'show'])->name('orders.show');
     Route::patch('/orders/{order}/status', [DashboardOrderController::class, 'updateStatus'])->name('orders.status');
     Route::post('/orders/bulk-status', [DashboardOrderController::class, 'bulkStatus'])->name('orders.bulk-status');
+    Route::post('/orders/{order}/steadfast', [DashboardOrderController::class, 'sendToSteadfast'])->name('orders.steadfast');
+    Route::post('/orders/bulk-steadfast', [DashboardOrderController::class, 'bulkSendToSteadfast'])->name('orders.bulk-steadfast');
+    Route::post('/orders/{order}/steadfast-check', [DashboardOrderController::class, 'checkSteadfastStatus'])->name('orders.steadfast-check');
     Route::delete('/orders/{order}', [DashboardOrderController::class, 'destroy'])->name('orders.destroy');
 
     // Coupons
@@ -144,5 +147,9 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
 // Online Payment Callbacks & Webhooks
 Route::get('/payment/uddoktapay/success', [\App\Http\Controllers\PaymentController::class, 'uddoktaPaySuccess'])->name('payment.uddoktapay.success');
 Route::post('/payment/uddoktapay/webhook', [\App\Http\Controllers\PaymentController::class, 'uddoktaPayWebhook'])->name('payment.uddoktapay.webhook');
+
+// Courier Webhooks
+Route::match(['get', 'post'], '/api/webhooks/steadfast', [\App\Http\Controllers\Webhook\SteadfastWebhookController::class, 'handle'])->name('webhook.steadfast');
+Route::match(['get', 'post'], '/webhooks/steadfast', [\App\Http\Controllers\Webhook\SteadfastWebhookController::class, 'handle']);
 
 require __DIR__ . '/settings.php';

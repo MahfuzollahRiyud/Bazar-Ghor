@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Services\SteadfastService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -80,6 +81,10 @@ class OrderController extends Controller
             'status' => $o->status,
             'status_label' => $o->status_label,
             'status_color' => $o->status_color,
+            'courier_name' => $o->courier_name,
+            'consignment_id' => $o->consignment_id,
+            'tracking_code' => $o->tracking_code,
+            'courier_status' => $o->courier_status,
             'items_count' => $o->items->count(),
             'created_at' => $o->created_at->format('d M Y, h:i A'),
         ]);
@@ -87,6 +92,7 @@ class OrderController extends Controller
         return Inertia::render('dashboard/orders/index', [
             'orders' => $orders,
             'categories' => $categories,
+            'steadfastConfigured' => SteadfastService::isConfigured(),
             'filters' => $request->only(['status', 'search', 'category_id', 'date_preset', 'date_from', 'date_to']),
             'filteredSummary' => [
                 'count' => $filteredCount,
@@ -128,6 +134,10 @@ class OrderController extends Controller
                 'status' => $order->status,
                 'status_label' => $order->status_label,
                 'status_color' => $order->status_color,
+                'courier_name' => $order->courier_name,
+                'consignment_id' => $order->consignment_id,
+                'tracking_code' => $order->tracking_code,
+                'courier_status' => $order->courier_status,
                 'payment_method' => $order->payment_method,
                 'notes' => $order->notes,
                 'created_at' => $order->created_at->format('d M Y, h:i A'),
@@ -141,7 +151,72 @@ class OrderController extends Controller
                     'total' => $i->total,
                 ]),
             ],
+            'steadfastConfigured' => SteadfastService::isConfigured(),
         ]);
+    }
+
+    public function sendToSteadfast(Order $order): RedirectResponse
+    {
+        $result = SteadfastService::createOrder($order);
+
+        if ($result['success']) {
+            return back()->with('success', $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
+    }
+
+    public function bulkSendToSteadfast(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'exists:orders,id',
+        ]);
+
+        if (!SteadfastService::isConfigured()) {
+            return back()->with('error', 'SteadFast API Key বা Secret Key কনফিগার করা নেই। সেটিংস থেকে কনফিগার করুন।');
+        }
+
+        $orders = Order::whereIn('id', $request->order_ids)->get();
+        $successCount = 0;
+        $skippedCount = 0;
+        $errors = [];
+
+        foreach ($orders as $order) {
+            if (!empty($order->tracking_code)) {
+                $skippedCount++;
+                continue;
+            }
+
+            $result = SteadfastService::createOrder($order);
+            if ($result['success']) {
+                $successCount++;
+            } else {
+                $errors[] = "#{$order->order_number}: " . $result['message'];
+            }
+        }
+
+        $msg = "{$successCount}টি অর্ডার সফলভাবে SteadFast-এ বুকিং হয়েছে।";
+        if ($skippedCount > 0) {
+            $msg .= " ({$skippedCount}টি অর্ডার আগে থেকেই পাঠানো থাকায় স্কিপ করা হয়েছে)";
+        }
+
+        if (!empty($errors)) {
+            $msg .= " ত্রুটি: " . implode('; ', array_slice($errors, 0, 3));
+            return back()->with('warning', $msg);
+        }
+
+        return back()->with('success', $msg);
+    }
+
+    public function checkSteadfastStatus(Order $order): RedirectResponse
+    {
+        $result = SteadfastService::checkStatus($order);
+        if ($result['success']) {
+            return back()->with('success', 'SteadFast স্ট্যাটাস আপডেট হয়েছে: ' . $result['status']);
+        }
+
+        return back()->with('error', $result['message'] ?? 'স্ট্যাটাস চেক করা যায়নি।');
     }
 
     public function updateStatus(Request $request, Order $order): RedirectResponse

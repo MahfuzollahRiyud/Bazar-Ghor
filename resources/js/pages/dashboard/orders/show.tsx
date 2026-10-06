@@ -1,6 +1,6 @@
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronLeft, Loader2, Trash2 } from 'lucide-react';
+import { ChevronLeft, ExternalLink, Loader2, RefreshCw, Trash2, Truck } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -33,6 +33,10 @@ interface Order {
     status: string;
     status_label: string;
     status_color: string;
+    courier_name?: string | null;
+    consignment_id?: string | null;
+    tracking_code?: string | null;
+    courier_status?: string | null;
     payment_method: string;
     notes?: string | null;
     created_at: string;
@@ -41,6 +45,7 @@ interface Order {
 
 interface Props {
     order: Order;
+    steadfastConfigured?: boolean;
 }
 
 const STATUS_STYLES: Record<string, string> = {
@@ -53,10 +58,12 @@ const STATUS_STYLES: Record<string, string> = {
     gray: 'bg-gray-100 text-gray-700 border-gray-200',
 };
 
-export default function OrderShow({ order }: Props) {
+export default function OrderShow({ order, steadfastConfigured = false }: Props) {
     const { t, language } = useAdminLanguage();
     const [status, setStatus] = useState(order.status);
     const [updating, setUpdating] = useState(false);
+    const [sendingToSteadfast, setSendingToSteadfast] = useState(false);
+    const [refreshingCourier, setRefreshingCourier] = useState(false);
 
     const statusOptions = [
         { value: 'pending', label: t.pending },
@@ -80,6 +87,22 @@ export default function OrderShow({ order }: Props) {
                 toast.error(language === 'en' ? 'Failed to update order status.' : 'সমস্যা হয়েছে।');
                 setUpdating(false);
             },
+        });
+    };
+
+    const handleSendToSteadfast = () => {
+        setSendingToSteadfast(true);
+        router.post(`/dashboard/orders/${order.id}/steadfast`, {}, {
+            preserveScroll: true,
+            onFinish: () => setSendingToSteadfast(false),
+        });
+    };
+
+    const handleCheckSteadfastStatus = () => {
+        setRefreshingCourier(true);
+        router.post(`/dashboard/orders/${order.id}/steadfast-check`, {}, {
+            preserveScroll: true,
+            onFinish: () => setRefreshingCourier(false),
         });
     };
 
@@ -248,6 +271,103 @@ export default function OrderShow({ order }: Props) {
                                     t.updateStatus
                                 )}
                             </button>
+                        </div>
+
+                        {/* Courier & Dispatch Card */}
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-xs space-y-3">
+                            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                                <div className="flex items-center gap-2">
+                                    <div className="h-7 w-7 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+                                        <Truck size={15} />
+                                    </div>
+                                    <h2 className="font-bold text-gray-900 text-sm uppercase tracking-wider">
+                                        {language === 'en' ? 'Courier Dispatch' : 'কুরিয়ার বুকিং'}
+                                    </h2>
+                                </div>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-100 text-orange-800">
+                                    SteadFast
+                                </span>
+                            </div>
+
+                            {order.tracking_code ? (
+                                <div className="space-y-2.5 text-xs">
+                                    <div className="flex justify-between items-center text-gray-600">
+                                        <span>{language === 'en' ? 'Tracking Code' : 'ট্র্যাকিং কোড'}</span>
+                                        <a
+                                            href={`https://steadfast.com.bd/t/${order.tracking_code}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="font-mono font-bold text-orange-600 hover:text-orange-700 hover:underline flex items-center gap-1"
+                                        >
+                                            {order.tracking_code}
+                                            <ExternalLink size={11} />
+                                        </a>
+                                    </div>
+
+                                    {order.consignment_id && (
+                                        <div className="flex justify-between text-gray-600">
+                                            <span>{language === 'en' ? 'Consignment ID' : 'কনসাইনমেন্ট নং'}</span>
+                                            <span className="font-mono font-semibold text-gray-900">
+                                                #{order.consignment_id}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    <div className="flex justify-between items-center text-gray-600">
+                                        <span>{language === 'en' ? 'Courier Status' : 'কুরিয়ার স্ট্যাটাস'}</span>
+                                        <span className="px-2 py-0.5 rounded-md font-bold text-[11px] capitalize bg-blue-50 text-blue-700 border border-blue-200">
+                                            {order.courier_status?.replace(/_/g, ' ') || 'In Review'}
+                                        </span>
+                                    </div>
+
+                                    <div className="pt-2 flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={handleCheckSteadfastStatus}
+                                            disabled={refreshingCourier}
+                                            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition cursor-pointer"
+                                        >
+                                            <RefreshCw size={12} className={refreshingCourier ? 'animate-spin' : ''} />
+                                            <span>{language === 'en' ? 'Sync Status' : 'স্ট্যাটাস রিফ্রেশ'}</span>
+                                        </button>
+                                        <a
+                                            href={`https://steadfast.com.bd/t/${order.tracking_code}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center justify-center px-3 rounded-xl bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 transition"
+                                            title="Live Tracking"
+                                        >
+                                            <ExternalLink size={13} />
+                                        </a>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-3 text-xs">
+                                    <p className="text-gray-500 text-[11px] leading-relaxed">
+                                        {language === 'en'
+                                            ? 'Send this order directly to SteadFast Courier. Consignment & tracking code will be generated instantly.'
+                                            : '১-ক্লিকে অর্ডারটি স্টেডফাস্ট কুরিয়ারে বুকিং করুন। ট্র্যাকিং কোড ও রাইডার পিকআপ জেনারেট হবে।'}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={handleSendToSteadfast}
+                                        disabled={sendingToSteadfast || order.status === 'cancelled' || order.status === 'delivered'}
+                                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-600 py-2.5 font-bold text-xs text-white hover:bg-orange-700 disabled:opacity-50 transition shadow-xs cursor-pointer"
+                                    >
+                                        {sendingToSteadfast ? (
+                                            <>
+                                                <Loader2 size={14} className="animate-spin" />
+                                                <span>{language === 'en' ? 'Sending to SteadFast...' : 'বুকিং হচ্ছে...'}</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Truck size={14} />
+                                                <span>{language === 'en' ? 'Send to SteadFast' : 'স্টেডফাস্টে পার্সেল পাঠান'}</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Payment Card */}
