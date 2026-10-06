@@ -1,6 +1,15 @@
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
 import { Head, Link, router } from '@inertiajs/react';
-import { ChevronDown, Loader2, Search, X } from 'lucide-react';
+import {
+    Calendar,
+    ChevronDown,
+    Filter,
+    Layers,
+    Loader2,
+    RotateCcw,
+    Search,
+    X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -43,11 +52,27 @@ interface StatusCounts {
 interface Filters {
     status?: string;
     search?: string;
+    category_id?: string;
+    date_preset?: string;
+    date_from?: string;
+    date_to?: string;
+}
+
+interface CategoryOption {
+    id: number;
+    name: string;
+}
+
+interface FilteredSummary {
+    count: number;
+    total_amount: number;
 }
 
 interface Props {
     orders: Paginated;
+    categories: CategoryOption[];
     filters: Filters;
+    filteredSummary: FilteredSummary;
     statusCounts: StatusCounts;
 }
 
@@ -60,13 +85,29 @@ const STATUS_COLOR_MAP: Record<string, string> = {
     cancelled: 'bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-400',
 };
 
-export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
+export default function OrdersIndex({ orders, categories = [], filters, filteredSummary = { count: 0, total_amount: 0 }, statusCounts }: Props) {
     const { t, language } = useAdminLanguage();
     const [search, setSearch] = useState(filters.search ?? '');
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [bulkStatus, setBulkStatus] = useState<string>('');
     const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
     const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+
+    // Date filter state
+    const [datePreset, setDatePreset] = useState(
+        filters.date_preset ?? (filters.date_from || filters.date_to ? 'custom' : '')
+    );
+    const [customFrom, setCustomFrom] = useState(filters.date_from ?? '');
+    const [customTo, setCustomTo] = useState(filters.date_to ?? '');
+
+    const hasActiveFilters = Boolean(
+        filters.status ||
+        filters.search ||
+        filters.category_id ||
+        filters.date_preset ||
+        filters.date_from ||
+        filters.date_to
+    );
 
     const statusTabs = [
         { key: '', label: t.all, countKey: 'all' },
@@ -84,7 +125,41 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        applyFilter({ search });
+        applyFilter({ search: search.trim() || undefined });
+    };
+
+    const handleCategoryChange = (catId: string) => {
+        applyFilter({ category_id: catId || undefined });
+    };
+
+    const handleDatePresetChange = (preset: string) => {
+        setDatePreset(preset);
+        if (preset === 'custom') {
+            return;
+        }
+        applyFilter({
+            date_preset: preset || undefined,
+            date_from: undefined,
+            date_to: undefined,
+        });
+    };
+
+    const applyCustomDate = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!customFrom && !customTo) return;
+        applyFilter({
+            date_preset: undefined,
+            date_from: customFrom || undefined,
+            date_to: customTo || undefined,
+        });
+    };
+
+    const resetAllFilters = () => {
+        setSearch('');
+        setDatePreset('');
+        setCustomFrom('');
+        setCustomTo('');
+        router.get('/dashboard/orders', {}, { replace: true });
     };
 
     const handleToggleSelect = (id: number) => {
@@ -146,14 +221,30 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
         <>
             <Head title={`${t.orders} — Bazar Ghor Admin`} />
             <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6">
-                <div className="flex items-center justify-between">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">{t.ordersManagement}</h1>
                         <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
                             {language === 'en'
-                                ? `Showing ${orders.total} total orders`
-                                : `মোট ${orders.total}টি অর্ডার পাওয়া গেছে`}
+                                ? `Showing ${orders.total} orders (${filteredSummary.count} matching filters)`
+                                : `মোট ${orders.total}টি অর্ডার পাওয়া গেছে (ফিল্টারে ${filteredSummary.count}টি)`}
                         </p>
+                    </div>
+
+                    {/* Filter Summary Metric Card */}
+                    <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-gray-100 shadow-2xs">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#2d6a27]/10 text-[#2d6a27]">
+                            <Filter size={16} />
+                        </div>
+                        <div className="text-right">
+                            <span className="text-[11px] font-medium text-gray-500 block leading-tight">
+                                {language === 'en' ? 'Filtered Amount' : 'ফিল্টারকৃত মোট বিক্রয়'}
+                            </span>
+                            <span className="text-sm font-bold text-[#2d6a27] leading-tight">
+                                ৳{Number(filteredSummary.total_amount).toLocaleString()}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
@@ -162,8 +253,8 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
                     {statusTabs.map((tab) => (
                         <button
                             key={tab.key}
-                            onClick={() => applyFilter({ status: tab.key || undefined, search: undefined })}
-                            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium transition ${
+                            onClick={() => applyFilter({ status: tab.key || undefined })}
+                            className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs sm:text-sm font-medium transition cursor-pointer ${
                                 (filters.status ?? '') === tab.key
                                     ? 'bg-[#2d6a27] text-white font-bold'
                                     : 'bg-white text-gray-600 shadow-2xs border border-gray-200 hover:bg-gray-50'
@@ -179,6 +270,127 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
                             </span>
                         </button>
                     ))}
+                </div>
+
+                {/* Filter Controls: Search + Category + Date Presets */}
+                <div className="rounded-2xl bg-white p-4 border border-gray-100 shadow-xs space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* 1. Search */}
+                        <form onSubmit={handleSearch} className="flex gap-1.5 flex-1 min-w-[220px] max-w-sm">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder={language === 'en' ? 'Search order #, customer name, phone...' : 'অর্ডার নম্বর, নাম বা ফোন...'}
+                                    className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-4 text-xs sm:text-sm focus:border-[#2d6a27] focus:outline-none bg-gray-50/50"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="rounded-xl bg-[#2d6a27] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#23531f] transition cursor-pointer"
+                            >
+                                {t.search}
+                            </button>
+                            {filters.search && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSearch('');
+                                        applyFilter({ search: undefined });
+                                    }}
+                                    className="rounded-xl border border-gray-200 px-2.5 py-2 text-gray-500 hover:bg-gray-50 cursor-pointer"
+                                    title="Clear search"
+                                >
+                                    <X size={15} />
+                                </button>
+                            )}
+                        </form>
+
+                        {/* 2. Category Filter */}
+                        <div className="flex items-center gap-1.5 min-w-[170px]">
+                            <div className="relative w-full">
+                                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                                <select
+                                    value={filters.category_id ?? ''}
+                                    onChange={(e) => handleCategoryChange(e.target.value)}
+                                    className="w-full rounded-xl border border-gray-200 py-2 pl-8 pr-7 text-xs sm:text-sm bg-gray-50/50 focus:border-[#2d6a27] focus:outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">{language === 'en' ? 'All Categories (সব ক্যাটাগরি)' : 'সব ক্যাটাগরি'}</option>
+                                    {categories.map((cat) => (
+                                        <option key={cat.id} value={cat.id}>
+                                            {cat.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+                            </div>
+                        </div>
+
+                        {/* 3. Date / Time Filter Presets */}
+                        <div className="flex items-center gap-1.5 min-w-[170px]">
+                            <div className="relative w-full">
+                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                                <select
+                                    value={datePreset}
+                                    onChange={(e) => handleDatePresetChange(e.target.value)}
+                                    className="w-full rounded-xl border border-gray-200 py-2 pl-8 pr-7 text-xs sm:text-sm bg-gray-50/50 focus:border-[#2d6a27] focus:outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">{language === 'en' ? 'All Time (সব সময়)' : 'সব সময় (All Time)'}</option>
+                                    <option value="today">{language === 'en' ? 'Today (আজকে)' : 'আজকের অর্ডার'}</option>
+                                    <option value="yesterday">{language === 'en' ? 'Yesterday (গতকাল)' : 'গতকালের অর্ডার'}</option>
+                                    <option value="this_week">{language === 'en' ? 'This Week (এই সপ্তাহ)' : 'এই সপ্তাহের অর্ডার'}</option>
+                                    <option value="this_month">{language === 'en' ? 'This Month (এই মাস)' : 'এই মাসের অর্ডার'}</option>
+                                    <option value="custom">{language === 'en' ? 'Custom Date Range...' : 'কাস্টম তারিখ নির্বাচন...'}</option>
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+                            </div>
+                        </div>
+
+                        {/* Reset All Filters button */}
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                onClick={resetAllFilters}
+                                className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-100 hover:bg-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition cursor-pointer"
+                                title="Reset all filters"
+                            >
+                                <RotateCcw size={13} />
+                                {language === 'en' ? 'Reset Filters' : 'রিসেট'}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Custom Date Range Picker inputs (Only shown when 'custom' selected) */}
+                    {datePreset === 'custom' && (
+                        <form onSubmit={applyCustomDate} className="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 animate-in fade-in">
+                            <span className="text-xs font-semibold text-gray-600">
+                                {language === 'en' ? 'Custom Range:' : 'তারিখ রেঞ্জ:'}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                                <input
+                                    type="date"
+                                    value={customFrom}
+                                    onChange={(e) => setCustomFrom(e.target.value)}
+                                    className="rounded-xl border border-gray-200 py-1.5 px-3 text-xs bg-gray-50/50 focus:border-[#2d6a27] focus:outline-none"
+                                />
+                                <span className="text-xs text-gray-400">থেকে</span>
+                                <input
+                                    type="date"
+                                    value={customTo}
+                                    onChange={(e) => setCustomTo(e.target.value)}
+                                    className="rounded-xl border border-gray-200 py-1.5 px-3 text-xs bg-gray-50/50 focus:border-[#2d6a27] focus:outline-none"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="rounded-xl bg-[#2d6a27] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#23531f] transition cursor-pointer"
+                            >
+                                {language === 'en' ? 'Filter' : 'ফিল্টার করুন'}
+                            </button>
+                        </form>
+                    )}
                 </div>
 
                 {/* Bulk Action Bar (Visible when orders selected) */}
@@ -230,38 +442,6 @@ export default function OrdersIndex({ orders, filters, statusCounts }: Props) {
                         </div>
                     </div>
                 )}
-
-                {/* Search */}
-                <form onSubmit={handleSearch} className="flex gap-2">
-                    <div className="relative flex-1 max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <input
-                            type="text"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder={language === 'en' ? 'Search order #, customer name, phone...' : 'অর্ডার নম্বর, নাম বা ফোন...'}
-                            className="w-full rounded-xl border border-gray-200 py-2 pl-9 pr-4 text-xs sm:text-sm focus:border-[#2d6a27] focus:outline-none bg-white"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        className="rounded-xl bg-[#2d6a27] px-4 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-[#23531f] transition"
-                    >
-                        {t.search}
-                    </button>
-                    {filters.search && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setSearch('');
-                                applyFilter({ search: undefined });
-                            }}
-                            className="rounded-xl border border-gray-200 px-3 py-2 text-gray-500 hover:bg-gray-50 bg-white"
-                        >
-                            <X size={16} />
-                        </button>
-                    )}
-                </form>
 
                 {/* Table */}
                 <div className="rounded-2xl bg-white shadow-xs border border-gray-200 overflow-hidden">

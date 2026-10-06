@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +23,36 @@ class OrderController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('category_id')) {
+            $catId = (int) $request->category_id;
+            $query->whereHas('items.product', function ($pq) use ($catId) {
+                $pq->where('category_id', $catId)
+                   ->orWhereHas('categories', fn($cq) => $cq->where('categories.id', $catId));
+            });
+        }
+
+        if ($request->filled('date_preset')) {
+            $preset = $request->date_preset;
+            $today = Carbon::today();
+            if ($preset === 'today') {
+                $query->whereDate('created_at', $today);
+            } elseif ($preset === 'yesterday') {
+                $query->whereDate('created_at', Carbon::yesterday());
+            } elseif ($preset === 'this_week') {
+                $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
+            } elseif ($preset === 'this_month') {
+                $query->whereYear('created_at', Carbon::now()->year)
+                      ->whereMonth('created_at', Carbon::now()->month);
+            }
+        } else {
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(fn($q) => $q->where('order_number', 'like', "%{$search}%")
@@ -28,7 +60,13 @@ class OrderController extends Controller
                 ->orWhere('customer_phone', 'like', "%{$search}%"));
         }
 
-        $orders = $query->paginate(15)->through(fn($o) => [
+        // Summary counts for filtered state
+        $filteredCount = (clone $query)->count();
+        $filteredTotalAmount = (clone $query)->sum('total');
+
+        $categories = Category::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+
+        $orders = $query->paginate(15)->withQueryString()->through(fn($o) => [
             'id' => $o->id,
             'order_number' => $o->order_number,
             'customer_name' => $o->customer_name,
@@ -48,7 +86,12 @@ class OrderController extends Controller
 
         return Inertia::render('dashboard/orders/index', [
             'orders' => $orders,
-            'filters' => $request->only(['status', 'search']),
+            'categories' => $categories,
+            'filters' => $request->only(['status', 'search', 'category_id', 'date_preset', 'date_from', 'date_to']),
+            'filteredSummary' => [
+                'count' => $filteredCount,
+                'total_amount' => (float) $filteredTotalAmount,
+            ],
             'statusCounts' => [
                 'all' => Order::count(),
                 'pending' => Order::where('status', 'pending')->count(),
