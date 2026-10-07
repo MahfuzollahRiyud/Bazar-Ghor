@@ -11,12 +11,39 @@ use Illuminate\Support\Facades\Log;
 class PaymentController extends Controller
 {
     /**
+     * Resolve and normalize UddoktaPay / Paymently checkout-v2 endpoint
+     */
+    public static function getUddoktaPayEndpoint(?string $baseUrl = null): string
+    {
+        $url = trim($baseUrl ?: SiteSetting::get('payment_uddoktapay_base_url', 'https://checkout.uddoktapay.com/api/checkout-v2'));
+        $url = rtrim($url, '/');
+
+        if (empty($url)) {
+            return 'https://checkout.uddoktapay.com/api/checkout-v2';
+        }
+
+        if (str_ends_with($url, '/api/checkout-v2')) {
+            return $url;
+        }
+
+        if (str_ends_with($url, '/checkout-v2')) {
+            return $url;
+        }
+
+        if (str_ends_with($url, '/api')) {
+            return $url . '/checkout-v2';
+        }
+
+        return $url . '/api/checkout-v2';
+    }
+
+    /**
      * Initiate UddoktaPay Payment
      */
     public static function initiateUddoktaPay(Order $order)
     {
-        $apiKey = SiteSetting::get('payment_uddoktapay_api_key');
-        $baseUrl = SiteSetting::get('payment_uddoktapay_base_url', 'https://checkout.uddoktapay.com/api/checkout-v2');
+        $apiKey = trim((string) SiteSetting::get('payment_uddoktapay_api_key'));
+        $endpoint = self::getUddoktaPayEndpoint();
 
         if (!$apiKey) {
             throw new \Exception('উদ্যোক্তাপে API Key সেট করা হয়নি। অনুগ্রহ করে এডমিন প্যানেল থেকে কনফিগার করুন।');
@@ -26,7 +53,7 @@ class PaymentController extends Controller
             'RT-UDDOKTAPAY-API-KEY' => $apiKey,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->timeout(20)->post(rtrim($baseUrl, '/'), [
+        ])->timeout(20)->post($endpoint, [
             'full_name' => $order->customer_name,
             'email' => $order->customer_email ?: 'order_' . $order->id . '@bazarghor.com',
             'amount' => (string) $order->total,

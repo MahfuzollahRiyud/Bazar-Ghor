@@ -290,11 +290,13 @@ export default function PaymentSettings({ gateways }: Props) {
                                         type="text"
                                         value={data.uddoktapay.base_url}
                                         onChange={(e) => setData('uddoktapay', { ...data.uddoktapay, base_url: e.target.value })}
-                                        placeholder="https://checkout.uddoktapay.com/api/checkout-v2"
+                                        placeholder="https://bazarghor.paymently.io/api/checkout-v2"
                                         className="w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm text-gray-900 font-mono focus:outline-none focus:border-[#2d6a27]"
                                     />
-                                    <p className="text-[11px] text-gray-400 mt-1">
-                                        Default: <code className="text-gray-600">https://checkout.uddoktapay.com/api/checkout-v2</code>
+                                    <p className="text-[11px] text-gray-500 mt-1">
+                                        {language === 'en'
+                                            ? 'Enter your UddoktaPay or Paymently checkout URL (e.g. https://bazarghor.paymently.io/api/checkout-v2 or https://checkout.uddoktapay.com/api/checkout-v2). The system will automatically normalize it.'
+                                            : 'আপনার উদ্যোক্তাপে বা পেমেন্টলি প্যানেলের URL দিন (যেমন: https://bazarghor.paymently.io/api/checkout-v2 বা https://bazarghor.paymently.io)। সিস্টেম একা একাই সঠিক এন্ডপয়েন্ট তৈরি করে নেবে।'}
                                     </p>
                                 </div>
                             </div>
