@@ -102,6 +102,10 @@ class CheckoutController extends Controller
                 'address' => $user->address,
             ] : null,
             'paymentGateways' => $gateways,
+            'shippingRates' => [
+                'inside_dhaka' => (float) SiteSetting::get('shipping_inside_dhaka_fee', 60),
+                'outside_dhaka' => (float) SiteSetting::get('shipping_outside_dhaka_fee', 120),
+            ],
         ]);
     }
 
@@ -198,7 +202,9 @@ class CheckoutController extends Controller
                 $userId = $newUser->id;
             }
 
-            $deliveryCharge = $request->delivery_area === 'inside_dhaka' ? 60 : 120;
+            $insideDhakaFee = (float) SiteSetting::get('shipping_inside_dhaka_fee', 60);
+            $outsideDhakaFee = (float) SiteSetting::get('shipping_outside_dhaka_fee', 120);
+            $deliveryCharge = $request->delivery_area === 'inside_dhaka' ? $insideDhakaFee : $outsideDhakaFee;
             $subtotal = 0;
             $orderItems = [];
 

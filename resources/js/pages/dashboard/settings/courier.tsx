@@ -12,8 +12,15 @@ import {
     Navigation,
     ShieldCheck,
     Copy,
+    MapPin,
+    Coins,
 } from 'lucide-react';
 import { useAdminLanguage } from '@/contexts/AdminLanguageContext';
+
+export interface ShippingConfig {
+    inside_dhaka_fee: number;
+    outside_dhaka_fee: number;
+}
 
 interface CourierConfig {
     steadfast: {
@@ -37,9 +44,10 @@ interface CourierConfig {
 
 interface Props {
     couriers: CourierConfig;
+    shipping?: ShippingConfig;
 }
 
-export default function CourierSettings({ couriers }: Props) {
+export default function CourierSettings({ couriers, shipping }: Props) {
     const { language } = useAdminLanguage();
 
     const [showSteadfastSecret, setShowSteadfastSecret] = useState(false);
@@ -48,6 +56,10 @@ export default function CourierSettings({ couriers }: Props) {
     const [copiedWebhook, setCopiedWebhook] = useState(false);
 
     const { data, setData, post, processing, recentlySuccessful } = useForm({
+        shipping: shipping ?? {
+            inside_dhaka_fee: 60,
+            outside_dhaka_fee: 120,
+        },
         steadfast: couriers.steadfast,
         pathao: couriers.pathao,
     });
@@ -108,6 +120,97 @@ export default function CourierSettings({ couriers }: Props) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* 0. Delivery Charges Configuration */}
+                    <div className="rounded-2xl bg-white p-6 border border-gray-100 shadow-xs space-y-5">
+                        <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-[#2d6a27] font-black text-sm border border-emerald-100">
+                                    <MapPin size={20} />
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h2 className="font-bold text-gray-900 text-base">
+                                            {language === 'en' ? 'Delivery & Shipping Charges' : 'ডেলিভারি ও শিপিং চার্জ নির্ধারণ'}
+                                        </h2>
+                                        <span className="text-[10px] bg-emerald-100 text-[#2d6a27] font-semibold px-2 py-0.5 rounded-full">
+                                            {language === 'en' ? 'Inside / Outside Dhaka' : 'ঢাকার ভেতরে ও বাইরে'}
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-gray-500">
+                                        {language === 'en'
+                                            ? 'Set fixed shipping amounts for Inside Dhaka and Outside Dhaka on checkout'
+                                            : 'চেকআউট পেজে কাস্টমারদের জন্য ঢাকার ভেতরে এবং ঢাকার বাইরে ডেলিভারি চার্জের পরিমাণ ফিক্স করুন'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    {language === 'en' ? 'Inside Dhaka Delivery Charge' : 'ঢাকার ভিতরে ডেলিভারি চার্জ'} <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        required
+                                        value={data.shipping.inside_dhaka_fee}
+                                        onChange={(e) =>
+                                            setData('shipping', {
+                                                ...data.shipping,
+                                                inside_dhaka_fee: Number(e.target.value),
+                                            })
+                                        }
+                                        className="w-full rounded-xl border border-gray-200 pl-8 pr-3.5 py-2.5 text-xs font-semibold focus:border-[#2d6a27] focus:outline-none"
+                                        placeholder="60"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                    {language === 'en' ? 'Default: 60 BDT. Applied when customer selects Inside Dhaka.' : 'ডিফল্ট: ৬০ টাকা। কাস্টমার ঢাকার ভেতরে সিলেক্ট করলে যুক্ত হবে।'}
+                                </p>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                                    {language === 'en' ? 'Outside Dhaka Delivery Charge' : 'ঢাকার বাইরে ডেলিভারি চার্জ'} <span className="text-red-500">*</span>
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-sm">৳</span>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="any"
+                                        required
+                                        value={data.shipping.outside_dhaka_fee}
+                                        onChange={(e) =>
+                                            setData('shipping', {
+                                                ...data.shipping,
+                                                outside_dhaka_fee: Number(e.target.value),
+                                            })
+                                        }
+                                        className="w-full rounded-xl border border-gray-200 pl-8 pr-3.5 py-2.5 text-xs font-semibold focus:border-[#2d6a27] focus:outline-none"
+                                        placeholder="120"
+                                    />
+                                </div>
+                                <p className="text-[11px] text-gray-400 mt-1">
+                                    {language === 'en' ? 'Default: 120 BDT. Applied when customer selects Outside Dhaka.' : 'ডিফল্ট: ১২০ টাকা। কাস্টমার ঢাকার বাইরে সিলেক্ট করলে যুক্ত হবে।'}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl bg-emerald-50/60 p-3 border border-emerald-100 flex items-start gap-2.5 text-xs text-emerald-800">
+                            <Info size={16} className="shrink-0 mt-0.5 text-emerald-600" />
+                            <div>
+                                {language === 'en'
+                                    ? 'These rates will be immediately reflected on the storefront checkout page when a customer chooses their delivery location.'
+                                    : 'এই অ্যামাউন্টগুলো সংরক্ষিত হওয়ার সাথে সাথে চেকআউট পেজে সক্রিয় হবে এবং কাস্টমার ডেলিভারি এলাকা সিলেক্ট করলে স্বয়ংক্রিয়ভাবে মোট হিসাবের সাথে যোগ হবে।'}
+                            </div>
+                        </div>
+                    </div>
+
                     {/* 1. SteadFast Courier */}
                     <div className="rounded-2xl bg-white p-6 border border-gray-100 shadow-xs space-y-4">
                         <div className="flex items-center justify-between pb-3 border-b border-gray-100">

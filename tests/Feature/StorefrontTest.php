@@ -140,4 +140,54 @@ class StorefrontTest extends TestCase
             'discount' => 50,
         ]);
     }
+
+    public function test_checkout_uses_configured_inside_and_outside_dhaka_shipping_fees()
+    {
+        \App\Models\SiteSetting::set('shipping_inside_dhaka_fee', '80');
+        \App\Models\SiteSetting::set('shipping_outside_dhaka_fee', '150');
+
+        $category = Category::create([
+            'name' => 'Fashion',
+            'slug' => 'fashion',
+            'is_active' => true,
+        ]);
+
+        $product = Product::create([
+            'category_id' => $category->id,
+            'name' => 'Shirt',
+            'slug' => 'shirt',
+            'price' => 500,
+            'stock_quantity' => 10,
+            'is_active' => true,
+        ]);
+
+        // Test outside dhaka
+        $orderData = [
+            'customer_name' => 'Karim',
+            'customer_phone' => '01811111111',
+            'customer_email' => 'karim@example.com',
+            'division' => 'চট্টগ্রাম',
+            'district' => 'চট্টগ্রাম',
+            'address' => 'GEC, Chattogram',
+            'delivery_area' => 'outside_dhaka',
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ];
+
+        $response = $this->post('/checkout', $orderData);
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('orders', [
+            'customer_name' => 'Karim',
+            'delivery_area' => 'outside_dhaka',
+            'delivery_charge' => 150,
+            'subtotal' => 500,
+            'total' => 650,
+        ]);
+    }
 }
+

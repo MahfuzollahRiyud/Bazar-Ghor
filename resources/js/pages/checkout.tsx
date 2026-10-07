@@ -34,11 +34,20 @@ interface CheckoutProps {
         address?: string;
     } | null;
     paymentGateways?: PaymentGatewayItem[];
+    shippingRates?: {
+        inside_dhaka: number;
+        outside_dhaka: number;
+    };
 }
 
-export default function Checkout({ currentUser, paymentGateways = [] }: CheckoutProps) {
+export default function Checkout({ currentUser, paymentGateways = [], shippingRates }: CheckoutProps) {
     const { items, subtotal, clearCart } = useCart();
     const { t, language } = useLanguage();
+
+    const rates = {
+        inside_dhaka: Number(shippingRates?.inside_dhaka ?? 60),
+        outside_dhaka: Number(shippingRates?.outside_dhaka ?? 120),
+    };
 
     const gateways = paymentGateways.length > 0 ? paymentGateways : [
         {
@@ -74,7 +83,7 @@ export default function Checkout({ currentUser, paymentGateways = [] }: Checkout
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const deliveryCharge = form.delivery_area === 'inside_dhaka' ? 60 : 120;
+    const deliveryCharge = form.delivery_area === 'inside_dhaka' ? rates.inside_dhaka : rates.outside_dhaka;
     const discount = couponApplied?.discount ?? 0;
     const total = subtotal + deliveryCharge - discount;
 
@@ -386,8 +395,8 @@ export default function Checkout({ currentUser, paymentGateways = [] }: Checkout
                                     </p>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {[
-                                            { value: 'inside_dhaka', label: t.insideDhaka, charge: '৳60' },
-                                            { value: 'outside_dhaka', label: t.outsideDhaka, charge: '৳120' },
+                                            { value: 'inside_dhaka', label: t.insideDhaka, charge: `৳${rates.inside_dhaka}` },
+                                            { value: 'outside_dhaka', label: t.outsideDhaka, charge: `৳${rates.outside_dhaka}` },
                                         ].map((opt) => (
                                             <label
                                                 key={opt.value}

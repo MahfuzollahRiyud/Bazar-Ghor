@@ -179,6 +179,11 @@ class SiteSettingController extends Controller
 
     public function courier(): Response
     {
+        $shipping = [
+            'inside_dhaka_fee' => (float) SiteSetting::get('shipping_inside_dhaka_fee', 60),
+            'outside_dhaka_fee' => (float) SiteSetting::get('shipping_outside_dhaka_fee', 120),
+        ];
+
         $couriers = [
             'steadfast' => [
                 'enabled' => SiteSetting::get('courier_steadfast_enabled', '0') === '1',
@@ -200,6 +205,7 @@ class SiteSettingController extends Controller
         ];
 
         return Inertia::render('dashboard/settings/courier', [
+            'shipping' => $shipping,
             'couriers' => $couriers,
         ]);
     }
@@ -207,6 +213,9 @@ class SiteSettingController extends Controller
     public function updateCourier(Request $request): RedirectResponse
     {
         $data = $request->validate([
+            'shipping.inside_dhaka_fee' => 'nullable|numeric|min:0',
+            'shipping.outside_dhaka_fee' => 'nullable|numeric|min:0',
+
             'steadfast.enabled' => 'nullable|boolean',
             'steadfast.api_key' => 'nullable|string|max:255',
             'steadfast.secret_key' => 'nullable|string|max:255',
@@ -222,6 +231,14 @@ class SiteSettingController extends Controller
             'pathao.base_url' => 'nullable|string|max:255',
             'pathao.mode' => 'nullable|string|in:sandbox,live',
         ]);
+
+        // Save Shipping Rates
+        if (isset($data['shipping']['inside_dhaka_fee'])) {
+            SiteSetting::set('shipping_inside_dhaka_fee', (string) $data['shipping']['inside_dhaka_fee']);
+        }
+        if (isset($data['shipping']['outside_dhaka_fee'])) {
+            SiteSetting::set('shipping_outside_dhaka_fee', (string) $data['shipping']['outside_dhaka_fee']);
+        }
 
         // Save Steadfast
         SiteSetting::set('courier_steadfast_enabled', !empty($data['steadfast']['enabled']) ? '1' : '0');
@@ -240,6 +257,6 @@ class SiteSettingController extends Controller
         SiteSetting::set('courier_pathao_base_url', $data['pathao']['base_url'] ?? 'https://api-hermes.pathao.com');
         SiteSetting::set('courier_pathao_mode', $data['pathao']['mode'] ?? 'sandbox');
 
-        return back()->with('success', 'কুরিয়ার সার্ভিস সেটিংস সফলভাবে আপডেট হয়েছে।');
+        return back()->with('success', 'কুরিয়ার ও ডেলিভারি চার্জ সেটিংস সফলভাবে আপডেট হয়েছে।');
     }
 }
