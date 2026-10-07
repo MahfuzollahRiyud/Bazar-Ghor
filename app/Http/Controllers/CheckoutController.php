@@ -15,8 +15,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class CheckoutController extends Controller
 {
@@ -135,7 +137,7 @@ class CheckoutController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): SymfonyResponse
     {
         $rules = [
             'customer_name' => 'required|string|max:255',
@@ -288,8 +290,11 @@ class CheckoutController extends Controller
             }
 
             return redirect()->route('order.success', $order->id);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
+            Log::error('Order checkout exception: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
             return back()->withErrors(['general' => $e->getMessage() ?: 'অর্ডার দেওয়ায় সমস্যা হয়েছে। আবার চেষ্টা করুন।']);
         }
     }
