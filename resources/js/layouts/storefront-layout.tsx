@@ -3,6 +3,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext';
 import StoreFooter from '@/components/store/StoreFooter';
 import StoreNavbar from '@/components/store/StoreNavbar';
 import WhatsAppButton from '@/components/store/WhatsAppButton';
+import { useVisitorTracker } from '@/hooks/use-visitor-tracker';
 import { useEffect, type ReactNode } from 'react';
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export default function StorefrontLayout({ children }: Props) {
+    useVisitorTracker();
+
     useEffect(() => {
         // Guarantee storefront stays in clean, crisp light mode so white inputs and black text never clash with OS dark mode
         document.documentElement.classList.remove('dark');

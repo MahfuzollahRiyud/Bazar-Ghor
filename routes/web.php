@@ -140,10 +140,17 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::post('/settings/courier', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updateCourier'])->name('settings.courier.update');
     Route::post('/settings/marketing-cost', [DashboardController::class, 'updateMarketingCost'])->name('settings.marketing-cost');
 
+    // Visitor Analytics
+    Route::get('/analytics', [\App\Http\Controllers\Dashboard\VisitorAnalyticsController::class, 'index'])->name('analytics.index');
+
     // Marketing Expenses
     Route::post('/marketing-expenses', [DashboardController::class, 'storeMarketingExpense'])->name('marketing-expenses.store');
     Route::delete('/marketing-expenses/{marketingExpense}', [DashboardController::class, 'destroyMarketingExpense'])->name('marketing-expenses.destroy');
 });
+
+// Visitor Analytics Tracking API
+Route::post('/api/analytics/log', [\App\Http\Controllers\Api\AnalyticsTrackingController::class, 'logPageView'])->name('analytics.log');
+Route::post('/api/analytics/heartbeat', [\App\Http\Controllers\Api\AnalyticsTrackingController::class, 'heartbeat'])->name('analytics.heartbeat');
 
 // Online Payment Callbacks & Webhooks
 Route::get('/payment/uddoktapay/success', [\App\Http\Controllers\PaymentController::class, 'uddoktaPaySuccess'])->name('payment.uddoktapay.success');

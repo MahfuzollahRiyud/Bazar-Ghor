@@ -13,6 +13,7 @@ import {
     Share2,
     Newspaper,
     Settings,
+    LineChart,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -63,6 +64,11 @@ export function AppSidebar() {
             title: t.orders,
             href: '/dashboard/orders',
             icon: ShoppingCart,
+        },
+        {
+            title: language === 'en' ? 'Visitor Analytics' : 'ভিজিটর অ্যানালাইটিক্স',
+            href: '/dashboard/analytics',
+            icon: LineChart,
         },
         {
             title: t.customers,
