@@ -61,6 +61,25 @@ class OrderController extends Controller
                 ->orWhere('customer_phone', 'like', "%{$search}%"));
         }
 
+        if ($request->filled('payment_method')) {
+            $pm = $request->payment_method;
+            if ($pm === 'cash_on_delivery') {
+                $query->where(function ($q) {
+                    $q->where('payment_method', 'cash_on_delivery')
+                      ->orWhereNull('payment_method')
+                      ->orWhere('payment_method', '');
+                });
+            } elseif ($pm === 'online') {
+                $query->whereNotNull('payment_method')
+                      ->where('payment_method', '!=', 'cash_on_delivery')
+                      ->where('payment_method', '!=', '');
+            } elseif ($pm === 'uddoktapay') {
+                $query->where('payment_method', 'uddoktapay');
+            } else {
+                $query->where('payment_method', $pm);
+            }
+        }
+
         // Summary counts for filtered state
         $filteredCount = (clone $query)->count();
         $filteredTotalAmount = (clone $query)->sum('total');
@@ -81,6 +100,8 @@ class OrderController extends Controller
             'status' => $o->status,
             'status_label' => $o->status_label,
             'status_color' => $o->status_color,
+            'payment_method' => $o->payment_method ?: 'cash_on_delivery',
+            'payment_status' => $o->payment_status ?: 'unpaid',
             'courier_name' => $o->courier_name,
             'consignment_id' => $o->consignment_id,
             'tracking_code' => $o->tracking_code,
@@ -93,7 +114,7 @@ class OrderController extends Controller
             'orders' => $orders,
             'categories' => $categories,
             'steadfastConfigured' => SteadfastService::isConfigured(),
-            'filters' => $request->only(['status', 'search', 'category_id', 'date_preset', 'date_from', 'date_to']),
+            'filters' => $request->only(['status', 'search', 'category_id', 'date_preset', 'date_from', 'date_to', 'payment_method']),
             'filteredSummary' => [
                 'count' => $filteredCount,
                 'total_amount' => (float) $filteredTotalAmount,
@@ -255,24 +276,7 @@ class OrderController extends Controller
         }
 
         if ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
-            // Restore inventory and decrease sold count
-            $order->loadMissing('items');
-            foreach ($order->items as $item) {
-                $qty = (int) $item->quantity;
-                $product = Product::find($item->product_id);
-                if ($product) {
-                    $product->decrement('sold_count', min($qty, (int) $product->sold_count));
-                    if (!$product->has_variants) {
-                        $product->increment('stock_quantity', $qty);
-                    }
-                }
-                if ($item->product_variant_id) {
-                    $variant = ProductVariant::find($item->product_variant_id);
-                    if ($variant) {
-                        $variant->increment('stock_quantity', $qty);
-                    }
-                }
-            }
+            $this->restoreOrderStock($order);
         } elseif ($newStatus !== 'cancelled' && $oldStatus === 'cancelled') {
             // Re-deduct inventory and increase sold count
             $order->loadMissing('items');
@@ -299,10 +303,56 @@ class OrderController extends Controller
         $order->update(['status' => $newStatus]);
     }
 
+    private function restoreOrderStock(Order $order): void
+    {
+        $order->loadMissing('items');
+        foreach ($order->items as $item) {
+            $qty = (int) $item->quantity;
+            $product = Product::find($item->product_id);
+            if ($product) {
+                $product->decrement('sold_count', min($qty, (int) $product->sold_count));
+                if (!$product->has_variants) {
+                    $product->increment('stock_quantity', $qty);
+                }
+            }
+            if ($item->product_variant_id) {
+                $variant = ProductVariant::find($item->product_variant_id);
+                if ($variant) {
+                    $variant->increment('stock_quantity', $qty);
+                }
+            }
+        }
+    }
+
     public function destroy(Order $order): RedirectResponse
     {
+        if ($order->status !== 'cancelled') {
+            $this->restoreOrderStock($order);
+        }
+        $order->items()->delete();
         $order->delete();
-        return redirect()->route('dashboard.orders.index')
-            ->with('success', 'অর্ডার মুছে ফেলা হয়েছে।');
+
+        return back()->with('success', 'অর্ডার সফলভাবে মুছে ফেলা হয়েছে।');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'order_ids' => 'required|array|min:1',
+            'order_ids.*' => 'exists:orders,id',
+        ]);
+
+        $orders = Order::whereIn('id', $request->order_ids)->get();
+        $count = $orders->count();
+
+        foreach ($orders as $order) {
+            if ($order->status !== 'cancelled') {
+                $this->restoreOrderStock($order);
+            }
+            $order->items()->delete();
+            $order->delete();
+        }
+
+        return back()->with('success', "{$count}টি অর্ডার সফলভাবে মুছে ফেলা হয়েছে।");
     }
 }

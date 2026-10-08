@@ -78,6 +78,7 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::post('/orders/{order}/steadfast', [DashboardOrderController::class, 'sendToSteadfast'])->name('orders.steadfast');
     Route::post('/orders/bulk-steadfast', [DashboardOrderController::class, 'bulkSendToSteadfast'])->name('orders.bulk-steadfast');
     Route::post('/orders/{order}/steadfast-check', [DashboardOrderController::class, 'checkSteadfastStatus'])->name('orders.steadfast-check');
+    Route::post('/orders/bulk-delete', [DashboardOrderController::class, 'bulkDestroy'])->name('orders.bulk-delete');
     Route::delete('/orders/{order}', [DashboardOrderController::class, 'destroy'])->name('orders.destroy');
 
     // Coupons

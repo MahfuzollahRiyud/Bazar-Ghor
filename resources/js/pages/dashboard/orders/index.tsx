@@ -11,6 +11,8 @@ import {
     Truck,
     ExternalLink,
     X,
+    CreditCard,
+    Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -29,6 +31,8 @@ interface Order {
     status: string;
     status_label: string;
     status_color: string;
+    payment_method?: string | null;
+    payment_status?: string | null;
     courier_name?: string | null;
     consignment_id?: string | null;
     tracking_code?: string | null;
@@ -62,6 +66,7 @@ interface Filters {
     date_preset?: string;
     date_from?: string;
     date_to?: string;
+    payment_method?: string;
 }
 
 interface CategoryOption {
@@ -99,6 +104,8 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
     const [bulkStatus, setBulkStatus] = useState<string>('');
     const [isBulkSubmitting, setIsBulkSubmitting] = useState(false);
     const [isBulkSteadfastSubmitting, setIsBulkSteadfastSubmitting] = useState(false);
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+    const [singleDeletingId, setSingleDeletingId] = useState<number | null>(null);
     const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
     const [steadfastOrderId, setSteadfastOrderId] = useState<number | null>(null);
 
@@ -115,7 +122,8 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
         filters.category_id ||
         filters.date_preset ||
         filters.date_from ||
-        filters.date_to
+        filters.date_to ||
+        filters.payment_method
     );
 
     const statusTabs = [
@@ -248,6 +256,54 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
         });
     };
 
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const msg = language === 'en'
+            ? `Are you sure you want to permanently delete ${selectedIds.length} selected order(s)? This action cannot be undone.`
+            : `আপনি কি নিশ্চিত যে নির্বাচিত ${selectedIds.length}টি অর্ডার ডিলিট করতে চান? এই প্রক্রিয়াটি আর ফিরিয়ে আনা যাবে না।`;
+        if (!window.confirm(msg)) return;
+
+        setIsBulkDeleting(true);
+        router.post('/dashboard/orders/bulk-delete', {
+            order_ids: selectedIds,
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                const count = selectedIds.length;
+                setSelectedIds([]);
+                toast.success(
+                    language === 'en'
+                        ? `${count} order(s) deleted successfully`
+                        : `${count}টি অর্ডার সফলভাবে মুছে ফেলা হয়েছে`
+                );
+            },
+            onError: () => {
+                toast.error(language === 'en' ? 'Failed to delete orders' : 'অর্ডার ডিলিট করতে সমস্যা হয়েছে');
+            },
+            onFinish: () => setIsBulkDeleting(false),
+        });
+    };
+
+    const handleSingleDelete = (orderId: number, orderNumber: string) => {
+        const msg = language === 'en'
+            ? `Are you sure you want to delete order ${orderNumber}? This action cannot be undone.`
+            : `আপনি কি নিশ্চিত যে #${orderNumber} অর্ডারটি মুছে ফেলতে চান?`;
+        if (!window.confirm(msg)) return;
+
+        setSingleDeletingId(orderId);
+        router.delete(`/dashboard/orders/${orderId}`, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setSelectedIds((prev) => prev.filter((id) => id !== orderId));
+                toast.success(language === 'en' ? 'Order deleted successfully' : 'অর্ডার সফলভাবে মুছে ফেলা হয়েছে');
+            },
+            onError: () => {
+                toast.error(language === 'en' ? 'Failed to delete order' : 'অর্ডার মুছে ফেলতে সমস্যা হয়েছে');
+            },
+            onFinish: () => setSingleDeletingId(null),
+        });
+    };
+
     return (
         <>
             <Head title={`${t.orders} — Bazar Ghor Admin`} />
@@ -359,7 +415,28 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                             </div>
                         </div>
 
-                        {/* 3. Date / Time Filter Presets */}
+                        {/* 3. Payment Method Filter */}
+                        <div className="flex items-center gap-1.5 min-w-[170px]">
+                            <div className="relative w-full">
+                                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
+                                <select
+                                    value={filters.payment_method ?? ''}
+                                    onChange={(e) => applyFilter({ payment_method: e.target.value || undefined })}
+                                    className="w-full rounded-xl border border-gray-200 py-2 pl-8 pr-7 text-xs sm:text-sm bg-gray-50/50 focus:border-[#2d6a27] focus:outline-none appearance-none cursor-pointer"
+                                >
+                                    <option value="">{language === 'en' ? 'All Payment Methods (সব পেমেন্ট)' : 'সব পেমেন্ট মেথড'}</option>
+                                    <option value="cash_on_delivery">{language === 'en' ? 'Cash on Delivery (ক্যাশ অন ডেলিভারি)' : 'ক্যাশ অন ডেলিভারি (COD)'}</option>
+                                    <option value="online">{language === 'en' ? 'All Online Payments (সব অনলাইন)' : 'অনলাইন পেমেন্ট (সব)'}</option>
+                                    <option value="uddoktapay">UddoktaPay (উদ্যোক্তাপে)</option>
+                                    <option value="bkash">bKash (বিকাশ)</option>
+                                    <option value="nagad">Nagad (নগদ)</option>
+                                    <option value="sslcommerz">SSLCommerz</option>
+                                </select>
+                                <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={13} />
+                            </div>
+                        </div>
+
+                        {/* 4. Date / Time Filter Presets */}
                         <div className="flex items-center gap-1.5 min-w-[170px]">
                             <div className="relative w-full">
                                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={14} />
@@ -476,6 +553,17 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
 
                             <button
                                 type="button"
+                                onClick={handleBulkDelete}
+                                disabled={isBulkDeleting}
+                                className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-rose-700 disabled:opacity-50 transition cursor-pointer"
+                                title={language === 'en' ? 'Permanently delete selected orders' : 'নির্বাচিত অর্ডারগুলো ডিলিট করুন'}
+                            >
+                                {isBulkDeleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                                {language === 'en' ? 'Delete Selected' : 'বাল্ক ডিলিট'}
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={() => setSelectedIds([])}
                                 className="rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-50 shadow-2xs transition cursor-pointer"
                             >
@@ -579,6 +667,23 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                                                     <p className="font-bold text-[#2d6a27] text-xs sm:text-sm">
                                                         ৳{Number(order.total).toLocaleString()}
                                                     </p>
+                                                    <div className="mt-1 flex items-center gap-1">
+                                                        {order.payment_method === 'cash_on_delivery' ? (
+                                                            <span className="inline-block text-[10px] font-semibold text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                                                                COD
+                                                            </span>
+                                                        ) : (
+                                                            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                                                order.payment_status === 'paid'
+                                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                                                    : 'bg-purple-50 text-purple-700 border border-purple-200'
+                                                            }`}>
+                                                                <CreditCard size={10} />
+                                                                {order.payment_method === 'uddoktapay' ? 'UddoktaPay' : order.payment_method}
+                                                                {order.payment_status === 'paid' && <span className="text-[9px]">✓</span>}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 {/* Interactive Inline Status Dropdown */}
@@ -632,6 +737,15 @@ export default function OrdersIndex({ orders, categories = [], filters, filtered
                                                     >
                                                         {language === 'en' ? 'View Details' : 'বিস্তারিত'}
                                                     </Link>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSingleDelete(order.id, order.order_number)}
+                                                        disabled={singleDeletingId === order.id}
+                                                        title={language === 'en' ? 'Delete order' : 'অর্ডার মুছে ফেলুন'}
+                                                        className="inline-flex items-center justify-center rounded-lg bg-red-50 border border-red-200 p-1.5 text-red-600 hover:bg-red-600 hover:text-white transition shadow-2xs cursor-pointer disabled:opacity-50"
+                                                    >
+                                                        {singleDeletingId === order.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                                    </button>
                                                 </td>
                                             </tr>
                                         );
