@@ -104,6 +104,12 @@ class PaymentController extends Controller
 
         $request->session()->put('last_placed_order_id', $order->id);
 
+        try {
+            \App\Services\MetaCapiService::sendPurchaseEvent($order, $request);
+        } catch (\Throwable $e) {
+            Log::warning('[Meta CAPI] UddoktaPay success hook error: ' . $e->getMessage());
+        }
+
         return redirect()->route('order.success', $order->id)->with('success', 'পেমেন্ট সফলভাবে সম্পন্ন হয়েছে!');
     }
 
@@ -130,6 +136,12 @@ class PaymentController extends Controller
                     'status' => 'confirmed',
                     'transaction_id' => $data['invoice_id'] ?? $data['transaction_id'] ?? null,
                 ]);
+
+                try {
+                    \App\Services\MetaCapiService::sendPurchaseEvent($order, $request);
+                } catch (\Throwable $e) {
+                    Log::warning('[Meta CAPI] UddoktaPay webhook error: ' . $e->getMessage());
+                }
             }
         }
 

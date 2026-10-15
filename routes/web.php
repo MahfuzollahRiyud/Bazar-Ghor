@@ -138,6 +138,9 @@ Route::middleware(['auth', 'verified', EnsureUserIsAdmin::class])->prefix('dashb
     Route::post('/settings/payment', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updatePayment'])->name('settings.payment.update');
     Route::get('/settings/courier', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'courier'])->name('settings.courier');
     Route::post('/settings/courier', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updateCourier'])->name('settings.courier.update');
+    Route::get('/settings/meta-pixel', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'metaPixel'])->name('settings.meta-pixel');
+    Route::post('/settings/meta-pixel', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'updateMetaPixel'])->name('settings.meta-pixel.update');
+    Route::post('/settings/meta-pixel/test', [\App\Http\Controllers\Dashboard\SiteSettingController::class, 'testMetaCapi'])->name('settings.meta-pixel.test');
     Route::post('/settings/marketing-cost', [DashboardController::class, 'updateMarketingCost'])->name('settings.marketing-cost');
 
     // Visitor Analytics

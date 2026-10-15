@@ -2,9 +2,10 @@ import ProductCard from '@/components/store/ProductCard';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatRichText } from '@/lib/utils';
+import { trackViewContent } from '@/lib/tracking';
 import { Head, Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Flame, Maximize2, Minus, Plus, RotateCcw, ShieldCheck, ShoppingCart, Sparkles, Star, Tag, Truck, X, Zap } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface Variant {
@@ -118,6 +119,16 @@ export default function ProductDetail({ product, related }: Props) {
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const reviewTrackRef = useRef<HTMLDivElement>(null);
     const reviewImages = product.review_image_urls ?? [];
+
+    useEffect(() => {
+        trackViewContent({
+            id: product.id,
+            name: product.name,
+            price: Number(product.effective_price || product.price),
+            category: product.category?.name || (product.categories?.[0]?.name) || 'Product',
+            currency: 'BDT',
+        });
+    }, [product.id]);
 
     const scrollReviews = (dir: 'left' | 'right') => {
         if (reviewTrackRef.current) {

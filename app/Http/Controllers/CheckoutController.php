@@ -289,6 +289,13 @@ class CheckoutController extends Controller
             $request->session()->put('last_placed_order_id', $order->id);
             DB::commit();
 
+            // Trigger Meta Conversions API (CAPI) Server-Side Purchase Event
+            try {
+                \App\Services\MetaCapiService::sendPurchaseEvent($order, $request);
+            } catch (\Throwable $capiErr) {
+                Log::warning('[Meta CAPI] Checkout listener error: ' . $capiErr->getMessage());
+            }
+
             // Online Payment Redirection
             if ($order->payment_method === 'uddoktapay') {
                 $paymentUrl = \App\Http\Controllers\PaymentController::initiateUddoktaPay($order);
@@ -329,6 +336,7 @@ class CheckoutController extends Controller
                 'status' => $order->status,
                 'created_at' => $order->created_at->format('d M Y, h:i A'),
                 'items' => $order->items->map(fn($i) => [
+                    'product_id' => $i->product_id,
                     'product_name' => $i->product_name,
                     'variant_name' => $i->variant_name,
                     'price' => $i->price,

@@ -1,8 +1,11 @@
 import { useLanguage } from '@/contexts/LanguageContext';
+import { trackPurchase } from '@/lib/tracking';
 import { Head, Link } from '@inertiajs/react';
 import { CheckCircle, Package, Phone, ShoppingBag } from 'lucide-react';
+import { useEffect } from 'react';
 
 interface OrderItem {
+    product_id?: number | string;
     product_name: string;
     variant_name?: string | null;
     price: number;
@@ -30,6 +33,20 @@ interface Props {
 
 export default function OrderSuccess({ order }: Props) {
     const { t, language } = useLanguage();
+
+    useEffect(() => {
+        trackPurchase({
+            order_number: order.order_number,
+            value: Number(order.total),
+            currency: 'BDT',
+            items: order.items.map((i) => ({
+                product_id: i.product_id,
+                product_name: i.product_name,
+                price: Number(i.price),
+                quantity: i.quantity,
+            })),
+        });
+    }, [order.order_number]);
 
     return (
         <>

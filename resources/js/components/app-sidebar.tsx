@@ -14,6 +14,7 @@ import {
     Newspaper,
     Settings,
     LineChart,
+    Activity,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -99,6 +100,11 @@ export function AppSidebar() {
             title: language === 'en' ? 'Site Settings' : 'সাইট সেটিংস',
             href: '/dashboard/settings/general',
             icon: Settings,
+        },
+        {
+            title: language === 'en' ? 'Meta Pixel & CAPI' : 'মেটা পিক্সেল ও CAPI',
+            href: '/dashboard/settings/meta-pixel',
+            icon: Activity,
         },
     ];
 

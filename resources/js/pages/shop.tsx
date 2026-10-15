@@ -1,5 +1,6 @@
 import ProductCard from '@/components/store/ProductCard';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { trackSearch } from '@/lib/tracking';
 import { Head, Link, router } from '@inertiajs/react';
 import { Filter, Search, SlidersHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
@@ -73,6 +74,7 @@ export default function Shop({ products, categories, filters }: Props) {
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        trackSearch(localSearch);
         applyFilter({ search: localSearch });
     };
 

@@ -259,4 +259,46 @@ class SiteSettingController extends Controller
 
         return back()->with('success', 'কুরিয়ার ও ডেলিভারি চার্জ সেটিংস সফলভাবে আপডেট হয়েছে।');
     }
+
+    public function metaPixel(): Response
+    {
+        $settings = [
+            'meta_pixel_id' => SiteSetting::get('meta_pixel_id', ''),
+            'meta_pixel_enabled' => SiteSetting::get('meta_pixel_enabled', '0') === '1',
+            'meta_capi_token' => SiteSetting::get('meta_capi_token', ''),
+            'meta_capi_enabled' => SiteSetting::get('meta_capi_enabled', '0') === '1',
+            'meta_test_event_code' => SiteSetting::get('meta_test_event_code', ''),
+        ];
+
+        return Inertia::render('dashboard/settings/meta-pixel', [
+            'settings' => $settings,
+        ]);
+    }
+
+    public function updateMetaPixel(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'meta_pixel_id' => 'nullable|string|max:100',
+            'meta_pixel_enabled' => 'nullable|boolean',
+            'meta_capi_token' => 'nullable|string',
+            'meta_capi_enabled' => 'nullable|boolean',
+            'meta_test_event_code' => 'nullable|string|max:100',
+        ]);
+
+        SiteSetting::set('meta_pixel_id', trim($data['meta_pixel_id'] ?? ''));
+        SiteSetting::set('meta_pixel_enabled', !empty($data['meta_pixel_enabled']) ? '1' : '0');
+        SiteSetting::set('meta_capi_token', trim($data['meta_capi_token'] ?? ''));
+        SiteSetting::set('meta_capi_enabled', !empty($data['meta_capi_enabled']) ? '1' : '0');
+        SiteSetting::set('meta_test_event_code', trim($data['meta_test_event_code'] ?? ''));
+
+        return back()->with('success', 'মেটা পিক্সেল ও কনভার্সন এপিআই (CAPI) সেটিংস সফলভাবে সংরক্ষিত হয়েছে।');
+    }
+
+    public function testMetaCapi(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $testCode = $request->input('test_event_code');
+        $result = \App\Services\MetaCapiService::sendTestEvent($testCode);
+
+        return response()->json($result);
+    }
 }

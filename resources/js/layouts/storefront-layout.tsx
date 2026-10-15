@@ -4,6 +4,7 @@ import StoreFooter from '@/components/store/StoreFooter';
 import StoreNavbar from '@/components/store/StoreNavbar';
 import WhatsAppButton from '@/components/store/WhatsAppButton';
 import { useVisitorTracker } from '@/hooks/use-visitor-tracker';
+import { useMetaPixel } from '@/hooks/use-meta-pixel';
 import { useEffect, type ReactNode } from 'react';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 
 export default function StorefrontLayout({ children }: Props) {
     useVisitorTracker();
+    useMetaPixel();
 
     useEffect(() => {
         // Guarantee storefront stays in clean, crisp light mode so white inputs and black text never clash with OS dark mode

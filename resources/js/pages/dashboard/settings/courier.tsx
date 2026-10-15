@@ -117,6 +117,12 @@ export default function CourierSettings({ couriers, shipping }: Props) {
                     >
                         {language === 'en' ? 'Courier Services' : 'কুরিয়ার সার্ভিস'}
                     </Link>
+                    <Link
+                        href="/dashboard/settings/meta-pixel"
+                        className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-900 border-b-2 border-transparent transition"
+                    >
+                        {language === 'en' ? 'Meta Pixel & CAPI' : 'মেটা পিক্সেল ও CAPI'}
+                    </Link>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">

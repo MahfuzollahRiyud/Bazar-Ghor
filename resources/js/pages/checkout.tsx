@@ -1,8 +1,9 @@
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { trackInitiateCheckout, trackAddPaymentInfo } from '@/lib/tracking';
 import { Head, Link, router } from '@inertiajs/react';
 import { CheckCircle, CreditCard, Eye, EyeOff, Loader2, Tag, Truck, User as UserIcon, Wallet } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const DIVISIONS = [
     { en: 'Dhaka', bn: 'ঢাকা' },
@@ -87,6 +88,22 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
     const discount = couponApplied?.discount ?? 0;
     const total = subtotal + deliveryCharge - discount;
 
+    // Track InitiateCheckout on checkout mount
+    useEffect(() => {
+        if (items.length > 0) {
+            trackInitiateCheckout({
+                items: items.map((i) => ({
+                    id: i.product_id,
+                    name: i.name,
+                    price: Number(i.price),
+                    quantity: i.quantity,
+                })),
+                value: Number(subtotal),
+                currency: 'BDT',
+            });
+        }
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
         setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
@@ -158,6 +175,13 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
             setErrors(newErrors);
             return;
         }
+
+        // Fire Meta Pixel AddPaymentInfo
+        trackAddPaymentInfo({
+            payment_method: form.payment_method,
+            value: Number(total),
+            currency: 'BDT',
+        });
 
         setSubmitting(true);
 

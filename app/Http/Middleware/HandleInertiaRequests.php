@@ -57,6 +57,11 @@ class HandleInertiaRequests extends Middleware
                         : asset('storage/' . \App\Models\SiteSetting::get('site_favicon')))
                     : '/favicon.ico',
             ],
+            'trackingSettings' => fn () => [
+                'meta_pixel_id' => \App\Models\SiteSetting::get('meta_pixel_id', ''),
+                'meta_pixel_enabled' => \App\Models\SiteSetting::get('meta_pixel_enabled', '0') === '1',
+                'meta_test_event_code' => \App\Models\SiteSetting::get('meta_test_event_code', ''),
+            ],
         ];
     }
 }

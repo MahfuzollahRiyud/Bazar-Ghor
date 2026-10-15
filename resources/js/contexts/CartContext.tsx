@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { trackAddToCart } from '@/lib/tracking';
 
 export interface CartItem {
     id: string; // unique key: productId + variantId
@@ -47,6 +48,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
                 return prev.map((i) => i.id === id ? { ...i, quantity: i.quantity + (item.quantity ?? 1) } : i);
             }
             return [...prev, { ...item, id, quantity: item.quantity ?? 1 }];
+        });
+
+        // Fire Meta Pixel AddToCart event
+        trackAddToCart({
+            id: item.product_id,
+            name: item.name + (item.variant_name ? ` (${item.variant_name})` : ''),
+            price: item.price,
+            quantity: item.quantity ?? 1,
         });
     }, []);
 
