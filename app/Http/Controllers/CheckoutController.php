@@ -22,9 +22,8 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class CheckoutController extends Controller
 {
-    public function index(Request $request): Response
+    public static function getActiveGateways(): array
     {
-        $user = $request->user();
         $gateways = [];
 
         // COD
@@ -90,6 +89,14 @@ class CheckoutController extends Controller
                 'type' => 'cod',
             ];
         }
+
+        return $gateways;
+    }
+
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        $gateways = self::getActiveGateways();
 
         return Inertia::render('checkout', [
             'currentUser' => $user ? [

@@ -111,9 +111,16 @@ interface Props {
         inside_dhaka: number;
         outside_dhaka: number;
     };
+    paymentGateways?: Array<{
+        id: string;
+        name: string;
+        description?: string;
+        type: 'cod' | 'online';
+        badge?: string;
+    }>;
 }
 
-export default function ProductDetail({ product, related, shippingRates }: Props) {
+export default function ProductDetail({ product, related, shippingRates, paymentGateways }: Props) {
     const { addItem } = useCart();
     const { t, language } = useLanguage();
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
@@ -799,6 +806,7 @@ export default function ProductDetail({ product, related, shippingRates }: Props
                         quantity={quantity}
                         onQuantityChange={setQuantity}
                         shippingRates={shippingRates}
+                        paymentGateways={paymentGateways}
                     />
                 )}
 

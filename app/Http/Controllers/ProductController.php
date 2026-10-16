@@ -103,6 +103,7 @@ class ProductController extends Controller
                 'inside_dhaka' => (float) SiteSetting::get('shipping_inside_dhaka_fee', 60),
                 'outside_dhaka' => (float) SiteSetting::get('shipping_outside_dhaka_fee', 120),
             ],
+            'paymentGateways' => CheckoutController::getActiveGateways(),
             'related' => $related,
         ]);
     }
