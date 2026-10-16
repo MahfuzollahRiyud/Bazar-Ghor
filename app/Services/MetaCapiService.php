@@ -96,6 +96,14 @@ class MetaCapiService
                 $userData['ct'] = [self::hashData($order->district)];
             }
 
+            // Country code (bd)
+            $userData['country'] = [self::hashData('bd')];
+
+            // External ID for cross-device customer matching
+            if ($order->customer_phone) {
+                $userData['external_id'] = [self::hashPhone($order->customer_phone)];
+            }
+
             // Capture Meta cookies if present
             $fbp = $req->cookie('_fbp');
             if ($fbp) {
@@ -136,6 +144,8 @@ class MetaCapiService
                     'content_ids' => $contentIds,
                     'num_items' => count($contents),
                     'order_id' => $order->order_number,
+                    'payment_method' => $order->payment_method ?: 'cash_on_delivery',
+                    'delivery_area' => $order->delivery_area ?: 'inside_dhaka',
                 ],
             ];
 

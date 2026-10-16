@@ -213,10 +213,41 @@ export default function ProductDetail({ product, related }: Props) {
         ? Math.round(((originalPrice - currentPrice) / originalPrice) * 100)
         : 0;
 
+    const schemaData = {
+        '@context': 'https://schema.org/',
+        '@type': 'Product',
+        name: product.name,
+        image: allImages.length > 0 ? allImages : (product.thumbnail_url ? [product.thumbnail_url] : []),
+        description: product.short_description || product.name,
+        sku: product.sku || String(product.id),
+        offers: {
+            '@type': 'Offer',
+            priceCurrency: 'BDT',
+            price: currentPrice,
+            availability: product.in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            itemCondition: 'https://schema.org/NewCondition',
+        },
+    };
+
     return (
         <>
             <Head title={`${product.name} — Bazar Ghor`}>
                 <meta name="description" content={product.short_description ?? `${product.name} কিনুন Bazar Ghor থেকে। সারাদেশে Cash on Delivery।`} />
+
+                {/* OpenGraph & Meta Catalog Microdata */}
+                <meta property="og:title" content={`${product.name} — Bazar Ghor`} />
+                <meta property="og:description" content={product.short_description ?? `${product.name} কিনুন Bazar Ghor থেকে। সারাদেশে Cash on Delivery।`} />
+                <meta property="og:type" content="product" />
+                {product.thumbnail_url && <meta property="og:image" content={product.thumbnail_url} />}
+                <meta property="product:price:amount" content={String(currentPrice)} />
+                <meta property="product:price:currency" content="BDT" />
+                <meta property="product:retailer_item_id" content={String(product.id)} />
+                <meta property="product:availability" content={product.in_stock ? 'in stock' : 'out of stock'} />
+
+                {/* Schema.org JSON-LD for Meta Catalog crawler & SEO */}
+                <script type="application/ld+json">
+                    {JSON.stringify(schemaData)}
+                </script>
             </Head>
 
             {/* Breadcrumb */}

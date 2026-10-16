@@ -1,6 +1,6 @@
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { trackInitiateCheckout, trackAddPaymentInfo } from '@/lib/tracking';
+import { trackInitiateCheckout, trackAddPaymentInfo, setCustomerData } from '@/lib/tracking';
 import { Head, Link, router } from '@inertiajs/react';
 import { CheckCircle, CreditCard, Eye, EyeOff, Loader2, Tag, Truck, User as UserIcon, Wallet } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -88,8 +88,17 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
     const discount = couponApplied?.discount ?? 0;
     const total = subtotal + deliveryCharge - discount;
 
-    // Track InitiateCheckout on checkout mount
+    // Track InitiateCheckout on checkout mount with initial customer info if present
     useEffect(() => {
+        if (currentUser) {
+            setCustomerData({
+                name: currentUser.name,
+                phone: currentUser.phone,
+                email: currentUser.email,
+                district: currentUser.district,
+            });
+        }
+
         if (items.length > 0) {
             trackInitiateCheckout({
                 items: items.map((i) => ({
@@ -100,9 +109,26 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
                 })),
                 value: Number(subtotal),
                 currency: 'BDT',
+                customer: currentUser ? {
+                    name: currentUser.name,
+                    phone: currentUser.phone,
+                    email: currentUser.email,
+                    district: currentUser.district,
+                } : undefined,
             });
         }
     }, []);
+
+    const handleCustomerBlur = () => {
+        if (form.customer_phone || form.customer_email || form.customer_name) {
+            setCustomerData({
+                name: form.customer_name,
+                phone: form.customer_phone,
+                email: form.customer_email,
+                district: form.district,
+            });
+        }
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -175,6 +201,14 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
             setErrors(newErrors);
             return;
         }
+
+        // Sync customer data for Meta Advanced Matching
+        setCustomerData({
+            name: form.customer_name,
+            phone: form.customer_phone,
+            email: form.customer_email,
+            district: form.district,
+        });
 
         // Fire Meta Pixel AddPaymentInfo
         trackAddPaymentInfo({
@@ -297,6 +331,7 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
                                             type="text"
                                             value={form.customer_name}
                                             onChange={handleChange}
+                                            onBlur={handleCustomerBlur}
                                             placeholder={language === 'en' ? 'e.g. John Doe' : 'আপনার নাম লিখুন'}
                                             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none ${
                                                 errors.customer_name ? 'border-red-400' : 'border-gray-300'
@@ -314,6 +349,7 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
                                             type="tel"
                                             value={form.customer_phone}
                                             onChange={handleChange}
+                                            onBlur={handleCustomerBlur}
                                             placeholder="01XXXXXXXXX"
                                             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none ${
                                                 errors.customer_phone ? 'border-red-400' : 'border-gray-300'
@@ -337,6 +373,7 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
                                             type="email"
                                             value={form.customer_email}
                                             onChange={handleChange}
+                                            onBlur={handleCustomerBlur}
                                             placeholder="example@gmail.com"
                                             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none ${
                                                 errors.customer_email ? 'border-red-400' : 'border-gray-300'
@@ -479,6 +516,7 @@ export default function Checkout({ currentUser, paymentGateways = [], shippingRa
                                             type="text"
                                             value={form.district}
                                             onChange={handleChange}
+                                            onBlur={handleCustomerBlur}
                                             placeholder={language === 'en' ? 'e.g. Dhaka, Gazipur, Cumilla' : 'জেলার নাম লিখুন'}
                                             className={`w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 shadow-xs focus:border-[#2d6a27] focus:ring-1 focus:ring-[#2d6a27] focus:outline-none ${
                                                 errors.district ? 'border-red-400' : 'border-gray-300'

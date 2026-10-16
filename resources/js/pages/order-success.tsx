@@ -19,6 +19,9 @@ interface Order {
     order_number: string;
     customer_name: string;
     customer_phone: string;
+    customer_email?: string | null;
+    district?: string | null;
+    payment_method?: string | null;
     total: number;
     delivery_area: string;
     delivery_charge: number;
@@ -39,6 +42,14 @@ export default function OrderSuccess({ order }: Props) {
             order_number: order.order_number,
             value: Number(order.total),
             currency: 'BDT',
+            delivery_area: order.delivery_area,
+            payment_method: order.payment_method || 'cash_on_delivery',
+            customer: {
+                name: order.customer_name,
+                phone: order.customer_phone,
+                email: order.customer_email || undefined,
+                district: order.district || undefined,
+            },
             items: order.items.map((i) => ({
                 product_id: i.product_id,
                 product_name: i.product_name,

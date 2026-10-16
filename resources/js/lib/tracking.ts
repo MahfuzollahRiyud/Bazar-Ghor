@@ -142,6 +142,71 @@ export function trackAddToCart(data: {
     });
 }
 
+export interface CustomerData {
+    name?: string;
+    phone?: string;
+    email?: string;
+    district?: string;
+    city?: string;
+}
+
+/**
+ * Format phone to international digits-only format required by Meta (e.g. 88017XXXXXXXX)
+ */
+export function formatMetaPhone(phone?: string): string | undefined {
+    if (!phone) return undefined;
+    const clean = phone.replace(/[^0-9]/g, '');
+    if (!clean) return undefined;
+    if (clean.startsWith('880')) return clean;
+    if (clean.startsWith('0')) return '88' + clean;
+    if (clean.length === 10 && clean.startsWith('1')) return '880' + clean;
+    return clean;
+}
+
+/**
+ * Meta Pixel Manual Advanced Matching
+ * Feeds hashed customer parameters (phone, email, name, city) to Meta
+ * to dramatically increase Event Match Quality (EMQ) and ROAS.
+ */
+export function setCustomerData(customer: CustomerData): void {
+    if (typeof window === 'undefined' || !window.fbq) return;
+
+    const userData: Record<string, string> = {
+        country: 'bd',
+    };
+
+    if (customer.email && customer.email.trim()) {
+        userData.em = customer.email.trim().toLowerCase();
+    }
+
+    const formattedPhone = formatMetaPhone(customer.phone);
+    if (formattedPhone) {
+        userData.ph = formattedPhone;
+        userData.external_id = formattedPhone;
+    }
+
+    if (customer.name && customer.name.trim()) {
+        const parts = customer.name.trim().toLowerCase().split(/\s+/);
+        userData.fn = parts[0] || '';
+        if (parts.length > 1) {
+            userData.ln = parts.slice(1).join(' ');
+        }
+    }
+
+    const city = customer.city || customer.district;
+    if (city && city.trim()) {
+        userData.ct = city.trim().toLowerCase();
+    }
+
+    try {
+        if (currentPixelId) {
+            window.fbq('init', currentPixelId, userData);
+        }
+    } catch (e) {
+        // silent fail
+    }
+}
+
 /**
  * Standard: InitiateCheckout
  */
@@ -149,7 +214,12 @@ export function trackInitiateCheckout(data: {
     items: Array<{ id: string | number; name?: string; price: number; quantity: number }>;
     value: number;
     currency?: string;
+    customer?: CustomerData;
 }): void {
+    if (data.customer) {
+        setCustomerData(data.customer);
+    }
+
     trackEvent('InitiateCheckout', {
         content_ids: data.items.map((i) => i.id.toString()),
         contents: data.items.map((i) => ({
@@ -180,14 +250,21 @@ export function trackAddPaymentInfo(data: {
 }
 
 /**
- * Standard: Purchase (With exact event_id matching CAPI for deduplication)
+ * Standard: Purchase (With exact event_id matching CAPI for deduplication and Advanced Matching)
  */
 export function trackPurchase(data: {
     order_number: string;
     value: number;
     currency?: string;
     items?: Array<{ product_id?: number | string; product_name?: string; price: number; quantity: number }>;
+    customer?: CustomerData;
+    delivery_area?: string;
+    payment_method?: string;
 }): void {
+    if (data.customer) {
+        setCustomerData(data.customer);
+    }
+
     const eventId = `order_${data.order_number}`;
 
     const contents = (data.items || []).map((i) => ({
@@ -207,6 +284,9 @@ export function trackPurchase(data: {
             value: Number(data.value),
             currency: data.currency || 'BDT',
             order_id: data.order_number,
+            delivery_area: data.delivery_area,
+            payment_method: data.payment_method || 'cash_on_delivery',
+            num_items: (data.items || []).reduce((acc, i) => acc + i.quantity, 0),
         },
         eventId
     );
