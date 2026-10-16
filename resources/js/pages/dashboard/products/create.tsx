@@ -62,6 +62,7 @@ export default function ProductCreate({ categories }: Props) {
         video_url: '',
         card_video_url: '',
         show_card_video_on_detail: false,
+        show_direct_checkout: false,
         has_variants: false,
         is_featured: false,
         is_active: true,
@@ -255,6 +256,7 @@ export default function ProductCreate({ categories }: Props) {
         if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
         if (form.card_video_url.trim()) data.append('card_video_url', form.card_video_url.trim());
         data.append('show_card_video_on_detail', form.show_card_video_on_detail ? '1' : '0');
+        data.append('show_direct_checkout', form.show_direct_checkout ? '1' : '0');
         data.append('has_variants', form.has_variants ? '1' : '0');
         data.append('is_featured', form.is_featured ? '1' : '0');
         data.append('is_active', form.is_active ? '1' : '0');
@@ -1019,6 +1021,13 @@ export default function ProductCreate({ categories }: Props) {
                                             name: 'is_featured',
                                             label: language === 'bn' ? 'ফিচার্ড পণ্য' : 'Featured Product',
                                             desc: language === 'bn' ? 'হোমপেজে ফিচার্ড লিস্টে দেখাবে' : 'Highlights on the homepage',
+                                        },
+                                        {
+                                            name: 'show_direct_checkout',
+                                            label: 'Checkout form in product page (Landing Page)',
+                                            desc: language === 'bn'
+                                                ? 'এই অপশন চালু করলে প্রোডাক্ট পেজের নিচেই সরাসরি ক্যাশ অন ডেলিভারি অর্ডার ফর্ম যুক্ত হবে'
+                                                : 'Embed direct Cash on Delivery checkout form directly inside the product page',
                                         },
                                     ].map((setting) => (
                                         <label key={setting.name} className="flex items-center gap-3 cursor-pointer">

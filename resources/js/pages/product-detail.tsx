@@ -1,4 +1,5 @@
 import ProductCard from '@/components/store/ProductCard';
+import LandingCheckoutForm from '@/components/store/LandingCheckoutForm';
 import { useCart } from '@/contexts/CartContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { formatRichText } from '@/lib/utils';
@@ -36,6 +37,7 @@ interface Product {
     video_url?: string | null;
     card_video_url?: string | null;
     show_card_video_on_detail?: boolean;
+    show_direct_checkout?: boolean;
     has_variants: boolean;
     stock_quantity: number;
     sold_count?: number;
@@ -105,9 +107,13 @@ function getYouTubeEmbedUrl(url?: string | null): string | null {
 interface Props {
     product: Product;
     related: Product[];
+    shippingRates?: {
+        inside_dhaka: number;
+        outside_dhaka: number;
+    };
 }
 
-export default function ProductDetail({ product, related }: Props) {
+export default function ProductDetail({ product, related, shippingRates }: Props) {
     const { addItem } = useCart();
     const { t, language } = useLanguage();
     const [selectedVariant, setSelectedVariant] = useState<Variant | null>(
@@ -195,6 +201,15 @@ export default function ProductDetail({ product, related }: Props) {
 
     const handleBuyNow = () => {
         if (!inStock) return;
+
+        // If direct landing checkout is enabled, smoothly scroll down to form
+        if (product.show_direct_checkout) {
+            const formEl = document.getElementById('direct-checkout-section');
+            if (formEl) {
+                formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+        }
 
         addItem({
             product_id: product.id,
@@ -773,6 +788,18 @@ export default function ProductDetail({ product, related }: Props) {
                             dangerouslySetInnerHTML={{ __html: formatRichText(product.description) }}
                         />
                     </div>
+                )}
+
+                {/* Embedded Landing Direct Checkout Form (when enabled on product) */}
+                {product.show_direct_checkout && inStock && (
+                    <LandingCheckoutForm
+                        product={product as any}
+                        selectedVariant={selectedVariant}
+                        onSelectVariant={setSelectedVariant}
+                        quantity={quantity}
+                        onQuantityChange={setQuantity}
+                        shippingRates={shippingRates}
+                    />
                 )}
 
                 {/* Related Products */}

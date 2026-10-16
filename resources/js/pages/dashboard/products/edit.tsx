@@ -44,6 +44,7 @@ interface ProductData {
     video_url?: string | null;
     card_video_url?: string | null;
     show_card_video_on_detail?: boolean;
+    show_direct_checkout?: boolean;
     has_variants: boolean;
     is_featured: boolean;
     is_active: boolean;
@@ -86,6 +87,7 @@ export default function ProductEdit({ product, categories }: Props) {
         video_url: product.video_url ?? '',
         card_video_url: product.card_video_url ?? '',
         show_card_video_on_detail: Boolean(product.show_card_video_on_detail),
+        show_direct_checkout: Boolean(product.show_direct_checkout),
         has_variants: product.has_variants,
         is_featured: product.is_featured,
         is_active: product.is_active,
@@ -252,6 +254,7 @@ export default function ProductEdit({ product, categories }: Props) {
         if (form.video_url.trim()) data.append('video_url', form.video_url.trim());
         if (form.card_video_url.trim()) data.append('card_video_url', form.card_video_url.trim());
         data.append('show_card_video_on_detail', form.show_card_video_on_detail ? '1' : '0');
+        data.append('show_direct_checkout', form.show_direct_checkout ? '1' : '0');
         data.append('has_variants', form.has_variants ? '1' : '0');
         data.append('is_featured', form.is_featured ? '1' : '0');
         data.append('is_active', form.is_active ? '1' : '0');
@@ -1050,16 +1053,29 @@ export default function ProductEdit({ product, categories }: Props) {
                                         name: 'is_featured',
                                         label: language === 'bn' ? 'ফিচার্ড' : 'Featured Product',
                                     },
+                                    {
+                                        name: 'show_direct_checkout',
+                                        label: 'Checkout form in product page (Landing Page)',
+                                    },
                                 ].map((s) => (
-                                    <label key={s.name} className="flex items-center gap-3 cursor-pointer">
+                                    <label key={s.name} className="flex items-start gap-3 cursor-pointer">
                                         <input
                                             type="checkbox"
                                             name={s.name}
                                             checked={(form as any)[s.name]}
                                             onChange={handleChange}
-                                            className="h-4 w-4 rounded accent-[#2d6a27]"
+                                            className="h-4 w-4 mt-0.5 rounded accent-[#2d6a27]"
                                         />
-                                        <span className="text-sm font-medium text-gray-700">{s.label}</span>
+                                        <div>
+                                            <span className="text-sm font-medium text-gray-700 block">{s.label}</span>
+                                            {s.name === 'show_direct_checkout' && (
+                                                <span className="text-xs text-gray-400 block mt-0.5">
+                                                    {language === 'bn'
+                                                        ? 'এই অপশন চালু করলে প্রোডাক্ট পেজের নিচেই সরাসরি ক্যাশ অন ডেলিভারি অর্ডার ফর্ম যুক্ত হবে'
+                                                        : 'Embed direct Cash on Delivery checkout form directly inside the product page'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </label>
                                 ))}
                             </div>

@@ -147,8 +147,8 @@ class CheckoutController extends Controller
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:20',
             'customer_email' => 'nullable|email|max:255',
-            'division' => 'required|string|max:100',
-            'district' => 'required|string|max:100',
+            'division' => 'nullable|string|max:100',
+            'district' => 'nullable|string|max:100',
             'upazila' => 'nullable|string|max:100',
             'address' => 'required|string|max:500',
             'delivery_area' => 'required|in:inside_dhaka,outside_dhaka',
@@ -242,14 +242,17 @@ class CheckoutController extends Controller
 
             $total = $subtotal + $deliveryCharge - $discount;
 
+            $divisionVal = $request->filled('division') ? $request->division : ($request->delivery_area === 'inside_dhaka' ? 'ঢাকা' : 'ঢাকার বাইরে');
+            $districtVal = $request->filled('district') ? $request->district : ($request->delivery_area === 'inside_dhaka' ? 'ঢাকা' : 'ঢাকার বাইরে');
+
             $order = Order::create([
                 'user_id' => $userId,
                 'order_number' => Order::generateOrderNumber(),
                 'customer_name' => $request->customer_name,
                 'customer_phone' => $request->customer_phone,
                 'customer_email' => $request->customer_email,
-                'division' => $request->division,
-                'district' => $request->district,
+                'division' => $divisionVal,
+                'district' => $districtVal,
                 'upazila' => $request->upazila,
                 'address' => $request->address,
                 'delivery_area' => $request->delivery_area,

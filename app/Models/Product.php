@@ -27,6 +27,7 @@ class Product extends Model
         'video_url',
         'card_video_url',
         'show_card_video_on_detail',
+        'show_direct_checkout',
         'has_variants',
         'stock_quantity',
         'sold_count',
@@ -48,6 +49,7 @@ class Product extends Model
         'show_stock_on_card' => 'boolean',
         'sold_count' => 'integer',
         'show_card_video_on_detail' => 'boolean',
+        'show_direct_checkout' => 'boolean',
     ];
 
     protected $appends = [

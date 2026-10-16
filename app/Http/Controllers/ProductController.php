@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\SiteSetting;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -65,6 +66,7 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'card_video_url' => $product->card_video_url,
                 'show_card_video_on_detail' => (bool) $product->show_card_video_on_detail,
+                'show_direct_checkout' => (bool) $product->show_direct_checkout,
                 'has_variants' => $product->has_variants,
                 'stock_quantity' => $product->stock_quantity,
                 'sold_count' => $product->sold_count ?? 0,
@@ -96,6 +98,10 @@ class ProductController extends Controller
                     'image' => $v->image ? (str_starts_with($v->image, 'http') ? $v->image : asset('storage/' . $v->image)) : null,
                     'sku' => $v->sku,
                 ]),
+            ],
+            'shippingRates' => [
+                'inside_dhaka' => (float) SiteSetting::get('shipping_inside_dhaka_fee', 60),
+                'outside_dhaka' => (float) SiteSetting::get('shipping_outside_dhaka_fee', 120),
             ],
             'related' => $related,
         ]);
